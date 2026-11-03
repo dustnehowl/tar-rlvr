@@ -1,0 +1,23 @@
+# CPU smoke: 랜덤 초기화 tiny Qwen2 + 합성 데이터로 GRPO 루프가 끝까지 도는지만 확인
+model:
+  kind: tiny            # tiny | tar7b
+  num_visual_tokens: 64 # tiny에서는 vocab 폭발 방지용으로 축소
+data:
+  source: synthetic      # synthetic | cova
+  n_samples: 16
+  tasks: [grid, sudoku, graph_coloring]
+mesh: [[1, 1], [fsdp, tp]]
+grpo:
+  num_generations: 2
+  max_prompt_length: 128
+  max_completion_length: 64
+  beta: 0.04
+  epsilon: 0.2
+  learning_rate: 1.0e-5
+  batch_size: 2
+  max_steps: 2
+rewards:
+  correctness: 1.0
+  format: 0.2
+  visual_budget: 0.1
+  max_visual_tokens_per_image: 128

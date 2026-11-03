@@ -1,0 +1,34 @@
+# ct6e-standard-4t (v6e-4) 기준 초안. 7B full-finetune은 4칩으로 빠듯하므로 LoRA 기본값.
+model:
+  kind: tar7b
+  hf_id: ByteDance-Seed/Tar-7B
+  num_visual_tokens: 65536
+  lora:
+    enabled: true
+    rank: 32
+    alpha: 64
+data:
+  source: cova
+  hf_id: tsunghanwu/cova
+  split: train
+  tasks: null            # null = 전체 17 task
+  prompt_column: TODO    # scripts/inspect_cova.py 로 스키마 확인 후 채울 것
+  answer_column: TODO
+  task_column: TODO
+mesh: [[4, 1], [fsdp, tp]]
+grpo:
+  num_generations: 8
+  max_prompt_length: 1024
+  max_completion_length: 2048
+  beta: 0.04
+  epsilon: 0.2
+  learning_rate: 1.0e-6
+  batch_size: 4
+  max_steps: 1000
+  eval_every: 50
+rewards:
+  correctness: 1.0
+  format: 0.2
+  visual_budget: 0.1
+  max_visual_tokens_per_image: 128
+checkpoint_dir: gs://YOUR_BUCKET/tar-rlvr/ckpt

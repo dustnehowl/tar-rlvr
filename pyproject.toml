@@ -1,0 +1,24 @@
+[project]
+name = "tar-rlvr"
+version = "0.0.1"
+description = "RLVR (GRPO) for Tar on CoVA tasks, JAX/Tunix on TPU"
+requires-python = ">=3.11"
+dependencies = [
+  "pyyaml",
+  "datasets",
+  "transformers",
+  "huggingface_hub",
+  "numpy>2",
+]
+
+[project.optional-dependencies]
+# CPU-only: reward tests + tiny-model smoke
+cpu = ["jax[cpu]", "flax", "optax", "google-tunix"]
+# TPU VM
+tpu = ["google-tunix[prod]"]
+# Offline SFT data construction / visualization (PyTorch side, not needed for RL)
+torch = ["torch", "torchvision"]
+dev = ["pytest", "ruff"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
