@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/ysk1207/tar-rlvr/scripts/train.py", line 11, in <module>
+    train(cfg, max_steps=a.max_steps, debug=a.debug)
+  File "/home/ysk1207/tar-rlvr/tar_rlvr/train/grpo.py", line 83, in train
+    mesh = build_mesh(cfg["mesh"])
+                      ~~~^^^^^^^^
+KeyError: 'mesh'

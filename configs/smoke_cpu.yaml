@@ -1,15 +1,15 @@
-# CPU smoke: 랜덤 초기화 tiny Qwen2 + 합성 데이터로 GRPO 루프가 끝까지 도는지만 확인
+# smoke: 랜덤 초기화 tiny Qwen2 + 합성 수학 문제로 GRPO 루프가 끝까지 도는지만 확인 (CPU/GPU 공통)
 model:
   kind: tiny            # tiny | tar7b
-  num_visual_tokens: 64 # tiny에서는 vocab 폭발 방지용으로 축소
+  num_visual_tokens: 64
+  lora: {enabled: true, rank: 4, alpha: 8}   # 7B 와 같은 LoRA 경로를 스모크에서도 태운다
 data:
   source: synthetic      # synthetic | cova
   n_samples: 16
-  tasks: [grid, sudoku, graph_coloring]
 mesh: [[1, 1], [fsdp, tp]]
 grpo:
   num_generations: 2
-  max_prompt_length: 128
+  max_prompt_length: 512   # 바이트 토크나이저라 프롬프트가 김
   max_completion_length: 64
   beta: 0.04
   epsilon: 0.2

@@ -1,0 +1,42 @@
+# GPU 1장 (96GB) 파일럿: Tar-7B + LoRA + CoVA math (math_vr, mathnet)
+model:
+  kind: tar7b
+  hf_id: ByteDance-Seed/Tar-7B
+  num_visual_tokens: 65536
+  remat: false          # qwix LoRA 와 nnx.remat 충돌 → 끔
+  lora:
+    enabled: true
+    rank: 32
+    alpha: 64
+    seed: 0
+data:
+  source: cova
+  hf_id: tsunghanwu/cova
+  split: train
+  tasks: [math_vr, mathnet]
+  max_answer_chars: 60
+  n_samples: null
+  passrate_file: data/passrate.json
+  solution_len_file: data/solution_len.json
+  max_solution_tokens: 768
+mesh: [[1, 1], [fsdp, tp]]
+grpo:
+  num_generations: 4
+  temperature: 0.8
+  max_prompt_length: 384
+  max_completion_length: 768
+  continuation: {enabled: true, min_tokens: 96, bridge: "\nNow, reasoning step by step with the help of the sketch:\n\nStep 1:"}
+  beta: 0.0
+  epsilon: 0.2
+  learning_rate: 1.0e-5
+  batch_size: 2
+  train_micro_batch_size: 1
+  logps_micro_batch_size: 1
+  rollout_micro_batch_size: 1
+  max_steps: 200
+  eval_every: 10
+rewards:
+  correctness: 1.0
+  format: 0.0
+  visual_budget: 0.0   # 시각 사용에 직접 보상 없음 — 정답률을 올릴 때만 살아남는지 본다
+  max_visual_tokens_per_image: 128

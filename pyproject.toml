@@ -9,16 +9,29 @@ dependencies = [
   "transformers",
   "huggingface_hub",
   "numpy>2",
+  "math-verify",
 ]
 
 [project.optional-dependencies]
 # CPU-only: reward tests + tiny-model smoke
 cpu = ["jax[cpu]", "flax", "optax", "google-tunix"]
+# GPU (CUDA 13 / Blackwell 포함)
+gpu = ["jax[cuda13]", "flax", "optax", "google-tunix"]
 # TPU VM
 tpu = ["google-tunix[prod]"]
 # Offline SFT data construction / visualization (PyTorch side, not needed for RL)
 torch = ["torch", "torchvision"]
 dev = ["pytest", "ruff"]
+
+[tool.uv]
+conflicts = [[{ extra = "cpu" }, { extra = "gpu" }, { extra = "tpu" }]]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tar_rlvr"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

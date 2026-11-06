@@ -1,4 +1,4 @@
-# ct6e-standard-4t (v6e-4) 기준 초안. 7B full-finetune은 4칩으로 빠듯하므로 LoRA 기본값.
+# ct6e-standard-4t (v6e-4) 본 학습: Tar-7B + LoRA + CoVA math (math_vr, mathnet)
 model:
   kind: tar7b
   hf_id: ByteDance-Seed/Tar-7B
@@ -11,10 +11,9 @@ data:
   source: cova
   hf_id: tsunghanwu/cova
   split: train
-  tasks: null            # null = 전체 17 task
-  prompt_column: TODO    # scripts/inspect_cova.py 로 스키마 확인 후 채울 것
-  answer_column: TODO
-  task_column: TODO
+  tasks: [math_vr, mathnet]
+  max_answer_chars: 60
+  n_samples: null
 mesh: [[4, 1], [fsdp, tp]]
 grpo:
   num_generations: 8

@@ -1,109 +1,100 @@
-"""Task별 verifier. 전부 순수 파이썬 → pytest로 하드웨어 없이 검증.
+"""수학 답 verifier. 순수 파이썬 + math-verify → pytest 로 하드웨어 없이 검증.
 
-각 verifier: (pred_answer: str, ref: dict) -> float in [0, 1]
-ref 는 데이터셋 row 에서 뽑은 정답/제약 정보 (task별 키가 다름).
+verifier: (pred_answer: str, ref: dict) -> float in [0, 1]
+ref["answer"]  : 골드 답 문자열 (예: "60", "$\\frac{1}{2}$", "30 or 60")
+ref["answers"] : (선택) 여러 정답이 모두 필요한 경우 리스트 — Math-VR metadata.answers 에서 옴
+ref["options"] : (선택) 객관식 보기 {"A": "...", ...}
+ref["choice"]  : (선택) 골드에 해당하는 보기 글자
 """
 from __future__ import annotations
 import re
-from .parsing import parse_grid
+
+_NUM = re.compile(r"-?\d+(?:\.\d+)?")
+_LETTER = re.compile(r"^\(?([A-H])\)?[.)]?$")
+_LATEXY = re.compile(r"[\\^{}]")
 
 
-# ---------- 그리드 계열: ARC, Maze, Table 등 ----------
-def grid_exact(pred: str, ref: dict) -> float:
-    g = parse_grid(pred)
-    t = parse_grid(ref["answer"]) if isinstance(ref["answer"], str) else ref["answer"]
-    return float(g is not None and g == t)
+def _clean(s: str) -> str:
+    s = s.strip().strip("$").strip()
+    s = re.sub(r"\\(therefore|because)\s*", "", s)
+    s = re.sub(r"^[a-zA-Z]\s*(\\in|=)\s*", "", s)   # "x \in (…)" / "x = 3" → "(…)" / "3"
+    return s.strip()
 
 
-def grid_cellwise(pred: str, ref: dict) -> float:
-    """부분 점수 (shaping용). 크기 틀리면 0."""
-    g = parse_grid(pred)
-    t = parse_grid(ref["answer"]) if isinstance(ref["answer"], str) else ref["answer"]
-    if g is None or t is None or len(g) != len(t) or any(len(a) != len(b) for a, b in zip(g, t)):
-        return 0.0
-    cells = sum(len(r) for r in t)
-    ok = sum(int(a == b) for ra, rb in zip(g, t) for a, b in zip(ra, rb))
-    return ok / cells
+def _latex(s: str) -> str:
+    """math-verify 는 $…$ 가 없으면 LaTeX 로 안 본다 ("2\\pi" → 2 로 파싱!). LaTeX 같으면 감싼다."""
+    return f"${s}$" if _LATEXY.search(s) else s
 
 
-# ---------- Sudoku: 정답 비교 대신 '유효한 해인지' 검증 (RLVR의 장점) ----------
-def sudoku_valid(pred: str, ref: dict) -> float:
-    g = parse_grid(pred)
-    puzzle = parse_grid(ref["puzzle"]) if isinstance(ref["puzzle"], str) else ref["puzzle"]
-    if g is None or puzzle is None:
-        return 0.0
-    n = len(g)
-    box = int(n ** 0.5)
-    if box * box != n or any(len(r) != n for r in g):
-        return 0.0
-    # 주어진 칸 보존
-    for i in range(n):
-        for j in range(n):
-            if puzzle[i][j] != 0 and puzzle[i][j] != g[i][j]:
-                return 0.0
-    full = set(range(1, n + 1))
-    for i in range(n):
-        if set(g[i]) != full or set(g[r][i] for r in range(n)) != full:
-            return 0.0
-    for bi in range(0, n, box):
-        for bj in range(0, n, box):
-            if {g[i][j] for i in range(bi, bi + box) for j in range(bj, bj + box)} != full:
-                return 0.0
-    return 1.0
+def _parse(s: str):
+    from math_verify import parse
+    return parse(_latex(_clean(s)))
 
 
-# ---------- Graph coloring: k색 이하 + 인접 노드 색 다름 ----------
-def graph_coloring_valid(pred: str, ref: dict) -> float:
-    """pred 예: 'A:1, B:2, C:1' 또는 json {"A":1,...}; ref: edges=[(u,v),...], k=int"""
-    import json
+def _split_gold(ref: dict) -> list[str]:
+    if ref.get("answers"):
+        return [str(a) for a in ref["answers"]]
+    a = str(ref["answer"]).strip()
+    parts = re.split(r"\s+or\s+|\s*;\s*", a)
+    return [p.strip() for p in parts if p.strip()] or [a]
+
+
+def _value(s: str) -> float:
+    import sympy
+    for x in _parse(s):
+        if not isinstance(x, str):
+            return float(sympy.N(x))
+    return float(_NUM.findall(s)[-1])
+
+
+def _numeric_close(a: str, b: str, rel: float = 1e-2) -> bool:
+    """math-verify 가 못 잡는 sqrt(2) vs 1.414 같은 근사 비교."""
     try:
-        colors = json.loads(pred)
+        va, vb = _value(a), _value(b)
+        return abs(va - vb) <= rel * max(1.0, abs(va))
     except Exception:
-        colors = {}
-        for m in re.finditer(r"([A-Za-z0-9_]+)\s*[:=]\s*([A-Za-z0-9_]+)", pred):
-            colors[m.group(1)] = m.group(2)
-    if not colors:
-        return 0.0
-    nodes = {str(n) for e in ref["edges"] for n in e}
-    if not nodes.issubset({str(k) for k in colors}):
-        return 0.0
-    colors = {str(k): str(v) for k, v in colors.items()}
-    if len(set(colors[n] for n in nodes)) > ref["k"]:
-        return 0.0
-    for u, v in ref["edges"]:
-        if colors[str(u)] == colors[str(v)]:
-            return 0.0
-    return 1.0
+        return False
 
 
-# ---------- 일반: 정규화 후 문자열/숫자 비교 (CLUTRR, ProsQA, 수학 등) ----------
-def _norm(s: str) -> str:
-    s = s.strip().lower().rstrip(".")
-    s = re.sub(r"\s+", " ", s)
-    return s
-
-
-def exact_match(pred: str, ref: dict) -> float:
-    return float(_norm(pred) == _norm(str(ref["answer"])))
-
-
-def numeric_match(pred: str, ref: dict, tol: float = 1e-6) -> float:
-    nums = re.findall(r"-?\d+(?:\.\d+)?", pred.replace(",", ""))
-    if not nums:
-        return 0.0
+def _equiv(pred: str, gold: str) -> bool:
+    if _clean(pred) == _clean(gold):
+        return True
     try:
-        return float(abs(float(nums[-1]) - float(ref["answer"])) <= tol)
+        from math_verify import verify
+        if verify(_parse(gold), _parse(pred)):
+            return True
     except Exception:
-        return 0.0
+        pass
+    return _numeric_close(pred, gold)
 
 
-# task 이름 → verifier. CoVA 17개 task 이름은 스키마 확인 후 채우기.
-VERIFIERS = {
-    "grid": grid_exact,
-    "arc": grid_exact,
-    "maze": grid_exact,
-    "sudoku": sudoku_valid,
-    "graph_coloring": graph_coloring_valid,
-    "exact": exact_match,
-    "numeric": numeric_match,
-}
+def option_letter_for(gold: str, options: dict[str, str]) -> str | None:
+    """골드 답이 어느 보기인지. 골드가 이미 글자면 그대로."""
+    m = _LETTER.match(gold.strip())
+    if m and m.group(1) in options:
+        return m.group(1)
+    g = _clean(gold)
+    for letter, text in options.items():
+        if _clean(text) == g:
+            return letter
+    for letter, text in options.items():
+        if _equiv(text, gold):
+            return letter
+    return None
+
+
+def math_match(pred: str, ref: dict) -> float:
+    pred = pred.strip()
+    if ref.get("options") and ref.get("choice"):
+        m = _LETTER.match(pred)
+        if m:
+            return float(m.group(1) == ref["choice"])
+        return float(_equiv(pred, ref["options"][ref["choice"]]))   # 글자 대신 보기 내용을 쓴 경우
+    golds = _split_gold(ref)
+    if len(golds) == 1:
+        return float(_equiv(pred, golds[0]))
+    pred_parts = [p.strip() for p in re.split(r"\s+or\s+|\s*[;,]\s*", pred) if p.strip()] or [pred]
+    return float(all(any(_equiv(pp, g) for pp in pred_parts) for g in golds))
+
+
+VERIFIERS = {"math": math_match}

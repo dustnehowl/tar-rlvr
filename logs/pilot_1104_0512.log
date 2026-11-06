@@ -1,0 +1,153 @@
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 477.81it/s]
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 477.29it/s]
+WARNING:absl:Reference model and actor model are colocated but do not share the same backbone. This will result in an unnecessary model copy and increased HBM usage.
+[cova] math_vr: {'kept': 11562, 'mc_unmatched': 75, 'multipart': 2387, 'long': 528} (of 14552)
+[cova] mathnet: {'kept': 1164, 'long': 135, 'multipart': 10} (of 1309)
+
+======================================================================
+  [0. 토크나이저]
+======================================================================
+bos_token = None
+eos_token = '<|im_end|>'
+pad_token = '<|endoftext|>'
+
+======================================================================
+  [1. 데이터] 첫 배치
+======================================================================
+--- prompts
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- task
+math
+--- ref
+{"answer": "A"}
+Traceback (most recent call last):
+  File "/home/ysk1207/tar-rlvr/scripts/train.py", line 11, in <module>
+    train(cfg, max_steps=a.max_steps, debug=a.debug)
+  File "/home/ysk1207/tar-rlvr/tar_rlvr/train/grpo.py", line 96, in train
+    return _train(cfg, mesh, max_steps, debug)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/tar_rlvr/train/grpo.py", line 152, in _train
+    learner.train(dataset)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/grpo/grpo_learner.py", line 398, in train
+    super().train(train_ds, eval_ds, skip_jit)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 598, in train
+    self._run_global_step(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 650, in _run_global_step
+    self._run_mini_batch_step(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 675, in _run_mini_batch_step
+    self._run_all_micro_batch_steps(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 767, in _run_all_micro_batch_steps
+    future.result()
+  File "/home/ysk1207/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/ysk1207/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 492, in _prepare_data
+    raise e
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 458, in _prepare_data
+    produced_training_examples = self._process_accumulated_batches(
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 263, in _process_accumulated_batches
+    combined_batch = self._generate_and_compute_advantage(merged, mode)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/grpo/grpo_learner.py", line 206, in _generate_and_compute_advantage
+    rollout_output = self.rl_cluster.generate(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_cluster.py", line 746, in generate
+    self.rollout.generate(string_prompts[s], rollout_config)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rollout/vanilla_rollout.py", line 55, in generate
+    output = self._sampler(
+             ^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/generate/sampler.py", line 735, in __call__
+    sampling_state = self._compiled_decode_fn(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/generate/sampler.py", line 581, in _decode_fn
+    return jax.lax.while_loop(cond_fn, sample_with_params, sampling_state)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/generate/sampler.py", line 574, in sample_with_params
+    return self._sample_step(params, sampler_state)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/generate/sampler.py", line 602, in _sample_step
+    logits, cache = transformer(
+                    ^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/qwix/_src/interception.py", line 177, in wrapper
+    output = func(*args, **kwargs)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/models/qwen2/model.py", line 674, in __call__
+    layer_cache, x = layer(
+                     ^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/models/qwen2/model.py", line 591, in __call__
+    cache, attn_output = self.attn(
+                         ^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/models/qwen2/model.py", line 488, in __call__
+    return nnx.remat(self.block.__func__)(self, x, cache, attn_mask, sin, cos)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/transforms/transforms.py", line 77, in resolve_kwargs_wrapper
+    return f(*args)
+           ^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 2114, in update_context_manager_wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 2114, in update_context_manager_wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/transforms/general.py", line 154, in split_inputs_wrapper
+    args_out, out = extract.from_tree(
+                    ^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/extract.py", line 559, in from_tree
+    return jax.tree.map(maybe_split, tree, is_leaf=is_leaf)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/jax/_src/tree.py", line 156, in map
+    return tree_util.tree_map(f, tree, *rest, is_leaf=is_leaf)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/extract.py", line 556, in maybe_split
+    return merge_fn(merge_ctx, (), prefix, x)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/extract.py", line 525, in merge_tree_node
+    return ctx.merge(leaf.graphdef, *leaf.states)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 1902, in merge
+    node = unflatten(
+           ^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 1156, in unflatten
+    node = _graph_unflatten(
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 1363, in _graph_unflatten
+    node_impl.init(node, _get_children())
+                         ^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 1322, in _get_children
+    node = _graph_unflatten(
+           ^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/graphlib.py", line 1277, in _graph_unflatten
+    variable.update_from_state(value)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/variablelib.py", line 1535, in update_from_state
+    self._raw_value = variable_state._raw_value
+    ^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/variablelib.py", line 1330, in __setattr__
+    self._check_can_update()
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/flax/nnx/variablelib.py", line 1320, in _check_can_update
+    raise errors.TraceContextError(
+flax.errors.TraceContextError: Cannot mutate Param from a different trace level (https://flax.readthedocs.io/en/latest/api_reference/flax.errors.html#flax.errors.TraceContextError)
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.

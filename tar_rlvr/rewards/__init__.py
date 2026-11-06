@@ -2,18 +2,31 @@
 데이터셋의 추가 컬럼(task, ref 등)이 **cols 로 넘어온다 (Tunix gsm8k 예제와 동일한 방식)."""
 from __future__ import annotations
 import json
-from .parsing import extract_answer, count_visual_tokens, visual_blocks
+from .parsing import extract_answer, has_answer_tag, count_visual_tokens, visual_blocks
 from .verifiers import VERIFIERS
 
 
+def _s(x):
+    if isinstance(x, (bytes, bytearray)):
+        return x.decode("utf-8", "replace")
+    x = str(x)
+    if len(x) > 2 and x[0] == "b" and x[1] in "'\"" and x[-1] == x[1]:
+        import ast
+        try:
+            return ast.literal_eval(x).decode("utf-8", "replace")
+        except Exception:
+            pass
+    return x
+
+
 def _refs(cols):
-    refs = cols["ref"]
-    return [json.loads(r) if isinstance(r, str) else r for r in refs]
+    return [json.loads(_s(r)) if not isinstance(r, dict) else r for r in cols["ref"]]
 
 
 def correctness_reward(prompts, completions, **cols) -> list[float]:
     out = []
     for comp, task, ref in zip(completions, cols["task"], _refs(cols)):
+        comp, task = _s(comp), _s(task)
         ans = extract_answer(comp)
         if ans is None:
             out.append(0.0)
@@ -26,8 +39,8 @@ def format_reward(prompts, completions, **cols) -> list[float]:
     """<answer> 태그 정확히 1개 + (시각 토큰을 썼다면) 답 이전에 등장."""
     out = []
     for comp in completions:
-        has_ans = comp.count("<answer>") == 1 and comp.count("</answer>") == 1
-        if not has_ans:
+        comp = _s(comp)
+        if not has_answer_tag(comp):
             out.append(0.0); continue
         vis_before = count_visual_tokens(comp.split("<answer>")[0])
         vis_after = count_visual_tokens(comp.split("</answer>")[-1])
@@ -43,9 +56,11 @@ def make_visual_budget_reward(max_tokens_per_image: int = 128, max_images: int =
     def visual_budget_reward(prompts, completions, **cols) -> list[float]:
         out = []
         for comp in completions:
+            comp = _s(comp)
             blocks = visual_blocks(comp)
-            if not blocks:
-                out.append(0.0); continue   # 시각 추론 안 쓰면 보너스 없음 (페널티도 없음)
+            # 답이 없으면 0: 그림만 그리고 끝내는 행동에 보상을 주면 그쪽으로 수렴한다 (파일럿에서 관찰됨)
+            if not blocks or extract_answer(comp) is None:
+                out.append(0.0); continue
             over = sum(max(0, count_visual_tokens(b) - max_tokens_per_image) for b in blocks)
             n_pen = max(0, len(blocks) - max_images)
             out.append(max(0.0, 1.0 - over / (max_tokens_per_image * max(1, len(blocks))) - 0.1 * n_pen))
@@ -53,15 +68,20 @@ def make_visual_budget_reward(max_tokens_per_image: int = 128, max_images: int =
     return visual_budget_reward
 
 
+def _scaled(name, fn, w):
+    def scaled(prompts, completions, **cols):
+        return [w * r for r in fn(prompts, completions, **cols)]
+    scaled.__name__ = name
+    return scaled
+
+
 def build_reward_fns(cfg: dict):
-    """config.rewards 의 가중치로 reward 리스트 구성. Tunix는 여러 fn 합산."""
-    w = cfg
     fns = []
-    if w.get("correctness", 0):
-        fns.append(lambda p, c, **k: [w["correctness"] * r for r in correctness_reward(p, c, **k)])
-    if w.get("format", 0):
-        fns.append(lambda p, c, **k: [w["format"] * r for r in format_reward(p, c, **k)])
-    if w.get("visual_budget", 0):
-        vb = make_visual_budget_reward(w.get("max_visual_tokens_per_image", 128))
-        fns.append(lambda p, c, **k: [w["visual_budget"] * r for r in vb(p, c, **k)])
+    if cfg.get("correctness", 0):
+        fns.append(_scaled("correctness", correctness_reward, cfg["correctness"]))
+    if cfg.get("format", 0):
+        fns.append(_scaled("format", format_reward, cfg["format"]))
+    if cfg.get("visual_budget", 0):
+        vb = make_visual_budget_reward(cfg.get("max_visual_tokens_per_image", 128))
+        fns.append(_scaled("visual_budget", vb, cfg["visual_budget"]))
     return fns

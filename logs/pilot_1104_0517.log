@@ -1,0 +1,241 @@
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 1835.23it/s]
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+Fetching 16 files:   0%|          | 0/16 [00:00<?, ?it/s]Fetching 16 files: 100%|██████████| 16/16 [00:00<00:00, 454.12it/s]
+WARNING:absl:Reference model and actor model are colocated but do not share the same backbone. This will result in an unnecessary model copy and increased HBM usage.
+[cova] math_vr: {'kept': 11562, 'mc_unmatched': 75, 'multipart': 2387, 'long': 528} (of 14552)
+[cova] mathnet: {'kept': 1164, 'long': 135, 'multipart': 10} (of 1309)
+
+======================================================================
+  [0. 토크나이저]
+======================================================================
+bos_token = None
+eos_token = '<|im_end|>'
+pad_token = '<|endoftext|>'
+
+======================================================================
+  [1. 데이터] 첫 배치
+======================================================================
+--- prompts
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- task
+math
+--- ref
+{"answer": "A"}
+
+======================================================================
+  [2. 롤아웃] step 1  — 4개 completion
+======================================================================
+
+#0  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Consider the right triangle formed by A, B, and C whose areas are known as A, B and C respectively and sides $AC=a$, $BC=b$ and $AC\times BC = c\times b$, where $AC=c$. From Pythagorean theorem (which is always $c^2=a^2+b^2=\left(\frac{c-a\times b}{b}\right)\times\frac{c+a\times b}{b}$ or $\frac{a\t …[770자 생략]… -ab-ab-ab-a^{-1}\times ab-ab-ab-ab-ab-ab-b\times ab-ab-ab-ab-ab-ab-a^{-1}\times ab^{2-ab}. $$ $$ab^{2-ab}\times ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-ab-a-b\times ab^{2-ab}\times ab-ab-ab-ab-ab-ab-ab-ab-a-b-a-b,\times ab^{2-ab}\times ab-ab-ab-ab-ab-ab-ab-ab-ab-b,\times ab^{2-ab
+
+#1  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Sketching visual tokens for this geometry problem involves visualizingizing the coordinates planes and calculating relevant dimensions such as diameters and radii. Understanding the tangency condition helps in deriving key points A, B, and calculating the area of circle C accurately.
+
+Answer:B
+
+#2  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Consider the point B(x,b) where (a is the y-coordinate of A on the equation of the circle). If let us assume that points P(a,b), P'(x,a,b), and P''(a,x) are marked respectively from the x-axis to the circle C. Now since circle C is tangent to the line AB and AB is perpendicular to x-axis so angle AP …[586자 생략]… => so P''=(sqrt(A^2+b^2)*b)/((sqrt(A^2+b^2)-sqrt(A+b))^P(A+b)==> so P''=((sqrt(A^2+b^2)*b)/((sqrt(A^2+b^2)-sqrt(A+b))*sqrt(A+b)))=> so P''=((sqrt(A^2+b^2)*b)/((sqrt(A^2+b^2)-sqrt(A+b))^sqrt(A+b)))=> so P''=((sqrt(A^2+b^2)*b)/((sqrt(A^2+b^2)-sqrt(A+b))^sqrt(A+b)))=> so P''=(sqrt(A^2+b^2)*b)/((sqrt(A^
+
+#3  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+In a rectangular coordinate plane, points A and B are variable points on the x-axis and y-axis respectively. If the circle C with diameter AB is tangent to the line $2x + y - 4 = 0$, what is the minimum area of circle C? (      )
+
+Options:
+
+A. \(\dfrac{4}{5}\pi \)
+
+B. \(\dfrac{3}{4}\pi \)
+
+C. \((6 - 2\sqrt{5})\pi \)
+
+D. \(\dfrac{5}{4}\pi\)<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Given a circle C with diameter AB of the circle tangent to the line $2x + y - 4 = 0$, calculate the minimum area of the circle C. Let the center of circle C be represented as point O, so the coordinates are O = (-y/(2+y), (-((2+y)^2+(4+y)/2)^{-1})(4-y)/(2+y)). Substituting these into the equation for the area of a circle gives us a minimum value of \( (6 - 2\sqrt{5})\pi \). So the answer is C.
+Answer:C
+
+======================================================================
+  [3→4. reward 합산 → advantage]  G=4
+======================================================================
+
+문제 #0  task=math
+  샘플 0: reward=+0.000  adv=+0.000  …b-ab-a-b-a-b,\times ab^{2-ab}\times ab-ab-ab-ab-ab-ab-ab-ab-ab-b,\times ab^{2-ab
+  샘플 1: reward=+0.000  adv=+0.000  …ving key points A, B, and calculating the area of circle C accurately.  Answer:B
+  샘플 2: reward=+0.000  adv=+0.000  …)*b)/((sqrt(A^2+b^2)-sqrt(A+b))^sqrt(A+b)))=> so P''=(sqrt(A^2+b^2)*b)/((sqrt(A^
+  샘플 3: reward=+0.000  adv=+0.000  …ves us a minimum value of \( (6 - 2\sqrt{5})\pi \). So the answer is C. Answer:C
+
+배치 평균 reward=0.000  (0 이면 전부 틀림 → advantage 0 → 학습 신호 없음)
+
+======================================================================
+  [2. 롤아웃] step 2  — 4개 completion
+======================================================================
+
+#0  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+A cube $ABCD-A_1B_1C_1D_1$ has an edge length of $4$. Points $P$ and $Q$ lie on edge $CC_1$, and $PQ=1$. Find the volume of the triangular pyramid $P\text{-}QBD$: __________ .<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Volume of pyramid $=\frac{1}{3} \times$base area$\times$height $=\frac{1}{3}\times(\frac{1}{2}\times4\times4)\times 4=\frac{32}{6}=\frac{16}{3}$
+
+#1  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+A cube $ABCD-A_1B_1C_1D_1$ has an edge length of $4$. Points $P$ and $Q$ lie on edge $CC_1$, and $PQ=1$. Find the volume of the triangular pyramid $P\text{-}QBD$: __________ .<|im_end|>
+<|im_start|>assistant
+
+--- completion
+12.57
+
+#2  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+A cube $ABCD-A_1B_1C_1D_1$ has an edge length of $4$. Points $P$ and $Q$ lie on edge $CC_1$, and $PQ=1$. Find the volume of the triangular pyramid $P\text{-}QBD$: __________ .<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Volume of a pyramid is given by $\frac{1}{3} \left(Area of Base \right) \cdot Height$. The bases and heights are very important here so you probably need to find them first. Looking at the triangles $CPD$ and $BPQ$, what else can we find here? Ok look at the triangles again. What else stands out to  …[125자 생략]… area of triangle $BPQ$? The area of triangle $ABD$ is obviously very important here so you'll want to try to find that if you can. Ok we almost have everything now we just need to figure out what this volume calculation looks like. Ok we finally know the formula for the volume of a triangle pyramid.
+
+#3  task=math
+--- prompt
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+You may think with visual tokens <I...> to sketch intermediate figures (e.g. a geometry diagram). Give the final answer inside <answer></answer>.
+A cube $ABCD-A_1B_1C_1D_1$ has an edge length of $4$. Points $P$ and $Q$ lie on edge $CC_1$, and $PQ=1$. Find the volume of the triangular pyramid $P\text{-}QBD$: __________ .<|im_end|>
+<|im_start|>assistant
+
+--- completion
+Answer is \frac{8}{3}.
+
+======================================================================
+  [3→4. reward 합산 → advantage]  G=4
+======================================================================
+
+문제 #0  task=math
+  샘플 0: reward=+0.000  adv=+0.000  …=\frac{1}{3}\times(\frac{1}{2}\times4\times4)\times 4=\frac{32}{6}=\frac{16}{3}$
+  샘플 1: reward=+0.000  adv=+0.000  …12.57
+  샘플 2: reward=+0.000  adv=+0.000  …looks like. Ok we finally know the formula for the volume of a triangle pyramid.
+  샘플 3: reward=+0.000  adv=+0.000  …Answer is \frac{8}{3}.
+
+배치 평균 reward=0.000  (0 이면 전부 틀림 → advantage 0 → 학습 신호 없음)
+Actor Training:   0%|          | 0/3 [00:00<?, ?step/s]W1104 05:24:46.301599   13648 hlo_rematerialization.cc:3402] Can't reduce memory use below 54.01GiB (57995306837 bytes) by rematerialization; only reduced to 61.11GiB (65611741010 bytes), down from 69.79GiB (74935841070 bytes) originally
+W1104 05:25:09.124230   13648 bfc_allocator.cc:743] Allocator (GPU_0_bfc) ran out of memory trying to allocate 40.58GiB (rounded to 43571373056) from the upper end requested by op 
+If this is caused by memory fragmentation, the environment variable 'TF_GPU_ALLOCATOR=cuda_malloc_async' may improve the situation.
+Current allocation summary follows.
+W1104 05:25:09.134083   13648 bfc_allocator.cc:754] __________________________________******************************************************************
+Traceback (most recent call last):
+  File "/home/ysk1207/tar-rlvr/scripts/train.py", line 11, in <module>
+    train(cfg, max_steps=a.max_steps, debug=a.debug)
+  File "/home/ysk1207/tar-rlvr/tar_rlvr/train/grpo.py", line 96, in train
+    return _train(cfg, mesh, max_steps, debug)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ysk1207/tar-rlvr/tar_rlvr/train/grpo.py", line 152, in _train
+    learner.train(dataset)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/grpo/grpo_learner.py", line 398, in train
+    super().train(train_ds, eval_ds, skip_jit)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 598, in train
+    self._run_global_step(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 650, in _run_global_step
+    self._run_mini_batch_step(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 675, in _run_mini_batch_step
+    self._run_all_micro_batch_steps(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_learner.py", line 754, in _run_all_micro_batch_steps
+    self.rl_cluster.update_actor(
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/rl/rl_cluster.py", line 682, in update_actor
+    self.actor_trainer.train(train_ds, eval_ds, skip_jit)
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/sft/peft_trainer.py", line 718, in train
+    self._throttler.wait_for_all()
+  File "/home/ysk1207/tar-rlvr/.venv/lib/python3.12/site-packages/tunix/sft/inflight_throttler.py", line 67, in wait_for_all
+    self._inflight_queue.get().block_until_ready()
+jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 40.58GiB with allocator GPU_0_bfc on device 0. [executable_name='jit__train_step'] [tf-allocator-allocation-error='']
+Actor Training:   0%|          | 0/3 [03:36<?, ?step/s]

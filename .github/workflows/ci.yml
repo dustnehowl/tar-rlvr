@@ -5,8 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install -e ".[cpu,dev]"
-      - run: pytest -q                       # reward verifiers
-      - run: python scripts/train.py --config configs/smoke_cpu.yaml --max-steps 2   # tiny model, 2 GRPO steps
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --extra cpu --extra dev
+      - run: uv run pytest -q
+      - run: uv run python scripts/train.py --config configs/smoke_cpu.yaml --max-steps 2
