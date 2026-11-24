@@ -1,0 +1,77 @@
+WARNING:absl:Reference model and actor model are colocated but do not share the same backbone. This will result in an unnecessary model copy and increased HBM usage.
+Traceback (most recent call last):
+  File "/mnt/work/tar-rlvr/scripts/train.py", line 11, in <module>
+    train(cfg, max_steps=a.max_steps, debug=a.debug)
+  File "/mnt/work/tar-rlvr/tar_rlvr/train/grpo.py", line 98, in train
+    return _train(cfg, mesh, max_steps, debug)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/tar-rlvr/tar_rlvr/train/grpo.py", line 160, in _train
+    learner.train(dataset)
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/grpo/grpo_learner.py", line 458, in train
+    super().train(train_ds, eval_ds, skip_jit)
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/rl_learner.py", line 581, in train
+    self._run_global_step(
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/rl_learner.py", line 648, in _run_global_step
+    self._run_mini_batch_step(
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/rl_learner.py", line 673, in _run_mini_batch_step
+    self._run_all_micro_batch_steps(
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/rl_learner.py", line 769, in _run_all_micro_batch_steps
+    self.rl_cluster.update_actor(
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/rl/rl_cluster.py", line 855, in update_actor
+    self.actor_trainer.train(train_ds, eval_ds, skip_jit)
+  File "/mnt/work/venv311/lib/python3.11/site-packages/tunix/sft/peft_trainer.py", line 707, in train
+    train_loss, aux, grad_norm = train_step(train_example)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/flax/nnx/graphlib.py", line 1693, in cache_args_wrapper
+    return f(*cached_args, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/flax/nnx/transforms/compilation.py", line 1023, in __call__
+    pure_args_out, pure_kwargs_out, pure_out = self.jitted_fn(
+                                               ^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/traceback_util.py", line 195, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)  # pyrefly: ignore[not-callable]
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/pjit.py", line 259, in cache_miss
+    executable, pgle_profiler, const_args) = _run_python_pjit(
+                                             ^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/pjit.py", line 139, in _run_python_pjit
+    out_flat, compiled, profiler, const_args = _pjit_call_impl_python(
+                                               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/pjit.py", line 1175, in _pjit_call_impl_python
+    compiled = computation.compile()
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 1239, in compile
+    executable = UnloadedMeshExecutable.from_hlo(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 1733, in from_hlo
+    xla_executable = _cached_compilation(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 1516, in _cached_compilation
+    xla_executable = compiler.compile_or_get_cached(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/compiler.py", line 469, in compile_or_get_cached
+    return _compile_and_write_cache(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/compiler.py", line 737, in _compile_and_write_cache
+    executable = backend_compile_and_load(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/profiler.py", line 420, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/compiler.py", line 353, in backend_compile_and_load
+    return backend.compile_and_load(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+Exception ignored in: <function set.<locals>.<lambda> at 0x7b9ed81c5940>
+Traceback (most recent call last):
+  File "/mnt/work/venv311/lib/python3.11/site-packages/qwix/_src/aux_data.py", line 36, in <lambda>
+    ref = weakref.ref(obj, lambda _: _aux_data and _aux_data.pop(obj_id, None))
+
+KeyboardInterrupt: 
+Exception ignored in atexit callback: <function clean_up at 0x7bb4a33e8540>
+Traceback (most recent call last):
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/api.py", line 2578, in clean_up
+    clear_backends(_crash=True)
+  File "/mnt/work/venv311/lib/python3.11/site-packages/jax/_src/api.py", line 2558, in clear_backends
+    pjit._cpp_pjit_cache_explicit_attributes.clear()
+KeyboardInterrupt: 

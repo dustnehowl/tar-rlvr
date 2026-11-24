@@ -35,7 +35,7 @@ def main():
         model, mcfg = tar_lib.load_tar7b(path, mesh, remat=False)
         tok = tar_lib.load_tokenizer(path)
         smp = sampler_lib.Sampler(model, tok, sampler_lib.CacheConfig(
-            cache_size=2048, num_layers=mcfg.num_layers, num_kv_heads=mcfg.num_kv_heads, head_dim=mcfg.head_dim))
+            cache_size=4096, num_layers=mcfg.num_layers, num_kv_heads=mcfg.num_kv_heads, head_dim=mcfg.head_dim))
         d = dict(cfg["data"]); d["n_samples"] = a.n; d["passrate_file"] = None
         rows = load_cova(d)
         prompts = [format_prompt(tok, r["prompts"]) for r in rows]

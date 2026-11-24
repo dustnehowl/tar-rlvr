@@ -52,12 +52,12 @@ def prepare_llm_only(model_path: str) -> str:
     return out
 
 
-def load_tar7b(model_path: str, mesh, dtype=jnp.bfloat16, remat: bool = True):
+def load_tar7b(model_path: str, mesh, dtype=jnp.bfloat16, remat: bool = True, already_stripped: bool = False):
     from tunix.models.qwen2 import model as qwen2_lib
     from tunix.models.qwen2 import params as params_lib
-    llm_path = prepare_llm_only(model_path)
+    llm_path = model_path if already_stripped else prepare_llm_only(model_path)
     cfg = dataclasses.replace(
-        qwen2_lib.ModelConfig.qwen2_5_7b(),
+        (qwen2_lib.ModelConfig.qwen2p5_7b() if hasattr(qwen2_lib.ModelConfig, 'qwen2p5_7b') else qwen2_lib.ModelConfig.qwen2_5_7b()),  # tunix 0.1.7 / 0.1.5
         vocab_size=tar_vocab_size(model_path),
         # BLOCK: attention 블록 활성화를 backward 때 재계산 → 메모리 ↓, 시간 ~+30%
         remat_config=qwen2_lib.RematConfig.BLOCK if remat else qwen2_lib.RematConfig.NONE,

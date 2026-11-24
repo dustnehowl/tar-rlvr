@@ -35,12 +35,16 @@ def build_model_and_tokenizer(cfg, mesh, with_lora: bool = True):
         if lora.get("enabled"):
             model = apply_lora(model, mesh, lora)
         return model, tok
-    from huggingface_hub import snapshot_download
-    path = snapshot_download(m["hf_id"], ignore_patterns=["*.pth"])
-    model, _ = tar_lib.load_tar7b(path, mesh, remat=m.get("remat", False))
+    if m.get("local_path"):                       # 이미 vision_tower 를 뺀 safetensors 디렉토리
+        path, stripped = m["local_path"], True
+    else:
+        from huggingface_hub import snapshot_download
+        path, stripped = snapshot_download(m["hf_id"], ignore_patterns=["*.pth"]), False
+    model, _ = tar_lib.load_tar7b(path, mesh, remat=m.get("remat", False), already_stripped=stripped)
     if lora.get("enabled"):
         model = apply_lora(model, mesh, lora)
-    return model, tar_lib.load_tokenizer(path)
+    tok_path = m.get("tokenizer_path") or path
+    return model, tar_lib.load_tokenizer(tok_path)
 
 
 def apply_lora(model, mesh, lora_cfg):
@@ -69,7 +73,7 @@ def format_prompt(tok, text: str) -> str:
     return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
 
 
-def build_dataset(cfg, batch_size: int, tok):
+def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None):
     d = cfg["data"]
     rows = make_synthetic(d["n_samples"]) if d["source"] == "synthetic" else None
     if rows is None:
@@ -78,11 +82,18 @@ def build_dataset(cfg, batch_size: int, tok):
     for r in rows:
         r["prompts"] = format_prompt(tok, r["prompts"])
     # 값은 np.array 여야 한다: Tunix 가 jax.tree.map(np.repeat) 로 G 배 복제하는데 list[str] 이면 구조가 깨진다.
-    import numpy as np
+    # Tunix 는 train_ds 를 한 번만 순회하고 멈춘다 → max_steps 만큼 되도록 에폭 반복 (에폭마다 재셔플)
+    import math, random, numpy as np
+    n_batches = len(rows) // batch_size
+    epochs = max(1, math.ceil(max_steps / n_batches)) if max_steps else 1
     batches = []
-    for i in range(0, len(rows) - batch_size + 1, batch_size):
-        chunk = rows[i:i + batch_size]
-        batches.append({k: np.array([r[k] for r in chunk]) for k in chunk[0]})
+    for ep in range(epochs):
+        order = list(rows)
+        random.Random(1000 + ep).shuffle(order)
+        for i in range(0, len(order) - batch_size + 1, batch_size):
+            chunk = order[i:i + batch_size]
+            batches.append({k: np.array([r[k] for r in chunk]) for k in chunk[0]})
+    print(f"[data] {len(rows)} rows × {epochs} epochs = {len(batches)} batches of {batch_size} (max_steps={max_steps})")
     return batches
 
 
@@ -104,7 +115,7 @@ def _train(cfg, mesh, max_steps, debug):
     steps = max_steps or g["max_steps"]
     policy, tok = build_model_and_tokenizer(cfg, mesh)
     reference, _ = build_model_and_tokenizer(cfg, mesh, with_lora=False) if g["beta"] > 0 else (None, None)
-    dataset = build_dataset(cfg, g["batch_size"], tok)
+    dataset = build_dataset(cfg, g["batch_size"], tok, max_steps=steps)
     reward_fns = build_reward_fns(cfg["rewards"])
     metric_fns = [visual_metrics]          # 시각 사용률 등 핵심 지표는 항상 기록
     if debug:

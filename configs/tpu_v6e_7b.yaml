@@ -2,6 +2,8 @@
 model:
   kind: tar7b
   hf_id: ByteDance-Seed/Tar-7B
+  local_path: /mnt/work/tar7b_lm
+  tokenizer_path: /mnt/work/tar7b_lm
   num_visual_tokens: 65536
   remat: false          # qwix LoRA 와 nnx.remat 충돌 → 끔
   lora:
@@ -16,16 +18,16 @@ data:
   tasks: [math_vr, mathnet]
   max_answer_chars: 60
   n_samples: null
-  passrate_file: data/passrate.json
+  passrate_file: data/passrate_1200.json
   solution_len_file: data/solution_len.json
   max_solution_tokens: 768
 mesh: [[4, 1], [fsdp, tp]]
 grpo:
-  num_generations: 4
+  num_generations: 8
   temperature: 0.8
   max_prompt_length: 384
   max_completion_length: 768
-  continuation: {enabled: true, min_tokens: 96, bridge: "\nNow, reasoning step by step with the help of the sketch:\n\nStep 1:"}
+  continuation: {enabled: true, min_tokens: 96, free_image_tokens: true, bridge: "\nNow, reasoning step by step with the help of the sketch:\n\nStep 1:"}
   beta: 0.0
   epsilon: 0.2
   learning_rate: 1.0e-5
@@ -33,7 +35,7 @@ grpo:
   train_micro_batch_size: 1
   logps_micro_batch_size: 1
   rollout_micro_batch_size: 1
-  max_steps: 200
+  max_steps: 300
   eval_every: 10
 rewards:
   correctness: 1.0

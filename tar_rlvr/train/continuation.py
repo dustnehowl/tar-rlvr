@@ -50,11 +50,21 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
     bridge_ids = tok.encode(bridge, add_special_tokens=False) if hasattr(tok, "encode") else [ord(bridge) + 3]
     base_cfg = cluster.cluster_config.rollout_config
 
-    def generate(prompts, apply_chat_template=False, mode=rl_cluster_lib.Mode.TRAIN, micro_batch_size=None):
-        out = orig_generate(prompts, apply_chat_template=apply_chat_template, mode=mode, micro_batch_size=micro_batch_size)
+    def generate(prompts, apply_chat_template=False, mode=rl_cluster_lib.Mode.TRAIN, micro_batch_size=None, **kw):
+        # Tunix 버전에 따라 trace_tags 등 추가 인자가 들어옴 → 그대로 전달
+        out = orig_generate(prompts, apply_chat_template=apply_chat_template, mode=mode, micro_batch_size=micro_batch_size, **kw)
         if mode != rl_cluster_lib.Mode.TRAIN:
             return out
-        tokens = np.asarray(out.tokens)
+        raw = out.tokens
+        ragged = not hasattr(raw, "ndim")   # Tunix 0.1.7: 길이가 제각각인 list[array]; 0.1.5: (B, L) 배열
+        if ragged:
+            seqs = [np.asarray(t) for t in raw]
+            L0 = max(len(t) for t in seqs)
+            tokens = np.full((len(seqs), L0), pad_id, dtype=seqs[0].dtype if len(seqs[0]) else np.int32)
+            for i, t in enumerate(seqs):
+                tokens[i, : len(t)] = t
+        else:
+            tokens = np.asarray(raw)
         texts = list(out.text)
         n_real = [_n_real(tokens[i], pad_id, eos_id) for i in range(len(texts))]
         STATS["first_pass"] += len(texts)
@@ -70,7 +80,15 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         prompts2 = [prompts[i] + texts[i] + bridge for i in idx]
         with cluster.cluster_config.role_to_mesh[rl_cluster_lib.Role.ROLLOUT]:
             out2 = cluster.rollout.generate(prompts2, cfg2)
-        tokens2 = np.asarray(out2.tokens)
+        raw2 = out2.tokens
+        if not hasattr(raw2, "ndim"):
+            seqs2 = [np.asarray(t) for t in raw2]
+            L2 = max(len(t) for t in seqs2)
+            tokens2 = np.full((len(seqs2), L2), pad_id, dtype=tokens.dtype)
+            for j, t in enumerate(seqs2):
+                tokens2[j, : len(t)] = t
+        else:
+            tokens2 = np.asarray(raw2)
         merged, merged_text = [], list(texts)
         for j, i in enumerate(idx):
             m = _n_real(tokens2[j], pad_id, eos_id)
@@ -90,6 +108,14 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         if debug:
             n_re = sum("<im_start>" in out2.text[j] for j in range(len(idx)))
             print(f"[continuation] {len(idx)}/{len(texts)} continued after image (budget {remaining}); redrew instead of reasoning: {n_re}")
+        if ragged:   # 들어온 포맷대로: 행마다 실제 토큰(+EOS)까지만 잘라 리스트로
+            new_tokens = []
+            for i in range(new.shape[0]):
+                n = _n_real(new[i], pad_id, eos_id)
+                if n < new.shape[1] and new[i][n] == eos_id:
+                    n += 1
+                new_tokens.append(new[i][:n])
+            return dataclasses.replace(out, tokens=new_tokens, text=merged_text, logits=None, logprobs=None)
         return dataclasses.replace(out, tokens=jnp.asarray(new), text=merged_text, logits=None, logprobs=None)
 
     cluster.generate = generate
@@ -103,6 +129,13 @@ def visual_metrics(prompts, completions, rewards, advantages=None, advances=None
     vis = np.array(["<im_start>" in c for c in comps])
     ans = np.array([extract_answer(c) is not None for c in comps])
     redraw = np.array([c.count("<im_start>") >= 2 for c in comps])
+    # 시각 샘플 raw 토큰 저장 (나중에 de-tokenizer 로 그림 확인용)
+    import json, os
+    os.makedirs("logs", exist_ok=True)
+    with open("logs/visual_samples.jsonl", "a") as f:
+        for i, c in enumerate(comps):
+            if vis[i]:
+                f.write(json.dumps({"prompt": str(prompts[i])[-600:], "completion": c, "reward": float(rewards[i])}) + "\n")
     return {
         "visual/use_rate": (float(vis.mean()), np.mean),
         "visual/with_answer_rate": (float((vis & ans).sum() / max(1, vis.sum())), np.mean),

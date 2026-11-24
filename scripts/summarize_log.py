@@ -25,7 +25,9 @@ rows = [(rows[i][0], vis_flags[i]) for i in range(n)]
 
 print(f"{'steps':>10} {'acc':>6} {'vis%':>6} {'acc_vis':>8} {'acc_txt':>8}  n")
 G = 4
-per_step = G * 2  # batch_size 2 × G
+import re as _re
+m = _re.search(r"G=(\d+)", txt); G = int(m.group(1)) if m else 4
+per_step = G * 2
 for s in range(0, len(rows), win * per_step):
     chunk = rows[s:s + win * per_step]
     if not chunk: break
