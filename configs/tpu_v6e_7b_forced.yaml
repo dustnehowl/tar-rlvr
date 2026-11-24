@@ -47,7 +47,7 @@ rewards:
 telemetry:              # logs/runs/<run>/ 에 기록 → scripts/wandb_sync.py 로 업로드
   enabled: true
   log_kl: true          # beta=0 이어도 ref(=LoRA 뺀 base, backbone 공유) logps 로 KL 기록. step 당 ref forward 1회 추가
-  token_metrics: true   # 학습 forward 의 logits 로 entropy(텍스트/시각)·P(<im_start>)
+  token_metrics: false   # 학습 forward 의 logits 로 entropy(텍스트/시각)·P(<im_start>)
   sample_every: 50
   n_samples: 10
 eval:                   # held-out: 아래 개수만큼 학습 데이터에서 고정 시드로 빼서 eval 전용으로 쓴다
@@ -55,7 +55,7 @@ eval:                   # held-out: 아래 개수만큼 학습 데이터에서 �
   every: 25
   at_start: true        # step 0 (학습 전) 기준선
   pass_k: 8             # n_prompts × 8 샘플 — eval 비용 대부분이 여기. k_prompts 로 줄일 수 있음
-  k_prompts: null
+  k_prompts: 32
   batch: 16
   seed: 4242
 checkpoint_dir: /mnt/work/ckpt   # <dir>/<run 이름>. 같은 이름으로 재실행하면 이어서 학습
