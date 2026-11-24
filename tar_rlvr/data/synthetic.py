@@ -2,11 +2,18 @@
 from __future__ import annotations
 import json, random
 
-SYSTEM = ("Please reason step by step, and put your final answer within \\boxed{}. "
-          "You may sketch intermediate figures with visual tokens <I...> if it helps.")
+SYSTEM_NEUTRAL = "Please reason step by step, and put your final answer within \\boxed{}."
+SYSTEM_SKETCH = SYSTEM_NEUTRAL + " You may sketch intermediate figures with visual tokens <I...> if it helps."
+SYSTEM = SYSTEM_SKETCH          # run1~run4 에서 쓴 지시문 (기본값 유지)
 
 
-def make_synthetic(n: int, seed: int = 0, **_) -> list[dict]:
+def instruction(kind: str = "sketch") -> str:
+    """data.instruction: "sketch" = 그림을 유도하는 문장 포함 (run1~4), "neutral" = 일반 RLVR 지시문만."""
+    return {"sketch": SYSTEM_SKETCH, "neutral": SYSTEM_NEUTRAL}[kind]
+
+
+def make_synthetic(n: int, seed: int = 0, instruction_kind: str = "sketch", **_) -> list[dict]:
+    system = instruction(instruction_kind)
     rng = random.Random(seed)
     rows = []
     for i in range(n):
@@ -20,5 +27,5 @@ def make_synthetic(n: int, seed: int = 0, **_) -> list[dict]:
         else:
             r = rng.randint(1, 9)
             q, ans = f"A circle has radius {r}. What is its area? Give an exact answer.", f"{r*r}\\pi"
-        rows.append({"prompts": f"{SYSTEM}\n{q}", "task": "math", "ref": json.dumps({"answer": ans})})
+        rows.append({"prompts": f"{system}\n{q}", "task": "math", "ref": json.dumps({"answer": ans})})
     return rows

@@ -7,7 +7,7 @@
 """
 from __future__ import annotations
 import hashlib, json, re
-from .synthetic import SYSTEM
+from .synthetic import instruction
 
 MATH_CONFIGS = ["math_vr", "mathnet"]
 _MULTIPART = re.compile(r"(^|\n)\s*\(?\d+\)?\s*[:：]")        # "1: 40\n2: 7 or 17" 같은 묶음 문제 답
@@ -69,6 +69,7 @@ def load_cova(cfg: dict) -> list[dict]:
     import collections
     configs = cfg.get("tasks") or MATH_CONFIGS
     max_chars = cfg.get("max_answer_chars", 60)
+    system = instruction(cfg.get("instruction", "sketch"))
     rows = []
     for name in configs:
         ds = load_dataset(cfg["hf_id"], name, split=cfg.get("split", "train"))
@@ -80,7 +81,7 @@ def load_cova(cfg: dict) -> list[dict]:
             if reason:
                 why[reason] += 1
                 continue
-            rows.append({"prompts": f"{SYSTEM}\n{r['question']}", "task": "math", "ref": json.dumps(ref),
+            rows.append({"prompts": f"{system}\n{r['question']}", "task": "math", "ref": json.dumps(ref),
                          "qid": hashlib.md5(r["question"].encode()).hexdigest()[:12]})
             why["kept"] += 1
         print(f"[cova] {name}: {dict(why)} (of {len(ds)})")

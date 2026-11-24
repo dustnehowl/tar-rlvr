@@ -191,3 +191,18 @@ def test_token_stats():
     assert (a["n"], a["n_img"], a["n_vis"], a["n_text"], a["truncated"]) == (8, 1, 2, 3, False)
     assert abs(a["first_img"] - 2 / 8) < 1e-9
     assert b["truncated"] and b["n_img"] == 0
+
+
+def test_forced_image_marks_last_k_of_each_group():
+    import numpy as np
+    from tar_rlvr.train import forced_image
+
+    class FakeLearner:
+        def _generate_and_compute_advantage(self, training_input, mode=None):
+            return training_input["prompts"]
+
+    L = FakeLearner()
+    forced_image.install(L, num_generations=4, per_group=1)
+    out = L._generate_and_compute_advantage({"prompts": np.array(["a"] * 4 + ["b"] * 4), "task": np.array(["math"] * 8)})
+    assert out == ["a", "a", "a", "a<im_start><S2>", "b", "b", "b", "b<im_start><S2>"]
+    assert [forced_image.is_forced(p) for p in out].count(True) == 2

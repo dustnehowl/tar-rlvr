@@ -302,9 +302,13 @@ class Telemetry:
         n, G = len(comps), self.G
         ts = self._last_gen if self._last_gen is not None and len(self._last_gen) == n else None
         self._last_gen = None
-        has_img = np.array(["<im_start>" in c for c in comps])
+        fi = self.cfg["grpo"].get("forced_image") or {}
+        prefix = fi.get("prefix", "<im_start><S2>")
+        forced = np.array([bool(fi.get("enabled")) and _s(p).endswith(prefix) for p in prompts])
+        spont = np.array(["<im_start>" in c for c in comps])          # completion 안에서 모델이 스스로 연 그림
         if ts is not None and self.ti.im_start is not None:
-            has_img = np.array([t["n_img"] > 0 for t in ts])
+            spont = np.array([t["n_img"] > 0 for t in ts])
+        has_img = spont | forced
         ans = [extract_answer(c) for c in comps]
         tagged = [bool(ANSWER_RE.search(c) or boxed_contents(c)) for c in comps]
 
@@ -359,6 +363,23 @@ class Telemetry:
             "verifier/rule_only_correct": (_nanmean(rule_only) if rule_only else NAN, np.nanmean),
             "verifier/mv_only_correct": (_nanmean(mv_only) if mv_only else NAN, np.nanmean),
         }
+        if forced.any():
+            un = ~forced
+            f_ans = np.array([a is not None for a in ans])
+            fdiff = []
+            for s0 in range(0, n, G):
+                ff, oo = forced[s0:s0 + G], ok[s0:s0 + G]
+                if ff.any() and (~ff).any():
+                    fdiff.append(float(oo[ff].mean() - oo[~ff].mean()))
+            m.update({
+                "visual/forced_frac": (float(forced.mean()), np.mean),
+                "visual/spontaneous_img_frac": (float(spont[un].mean()) if un.any() else NAN, np.nanmean),
+                "visual/acc_forced": (float(ok[forced].mean()), np.mean),
+                "visual/acc_unforced": (float(ok[un].mean()) if un.any() else NAN, np.nanmean),
+                "visual/forced_minus_unforced_acc": (_nanmean(fdiff) if fdiff else NAN, np.nanmean),
+                "visual/adv_forced_mean": (float(adv[forced].mean()), np.mean),
+                "visual/forced_no_answer_rate": (float((~f_ans[forced]).mean()), np.mean),   # 그림 뒤 바로 끝남 등
+            })
         if ts is not None:
             L = np.array([t["n"] for t in ts]); Lt = np.array([t["n_text"] for t in ts])
             m.update({
@@ -381,7 +402,7 @@ class Telemetry:
                 idx[-1] = img_idx[0]
             self.sink.write_rows("samples", step, [dict(
                 step=step, prompt=_s(prompts[i])[-1500:], completion=comps[i], reward=float(r[i]), adv=float(adv[i]),
-                has_image=bool(has_img[i]), length=(ts[i]["n"] if ts else len(comps[i])), extracted=ans[i],
+                has_image=bool(has_img[i]), forced=bool(forced[i]), length=(ts[i]["n"] if ts else len(comps[i])), extracted=ans[i],
                 ref=refs[i]) for i in idx])
         return m
 

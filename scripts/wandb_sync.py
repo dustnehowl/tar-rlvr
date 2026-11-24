@@ -97,10 +97,10 @@ class RunDirSource:
             if s in self.tabled or (s > self.done and not final):
                 continue
             rows = [json.loads(l) for l in open(fp, encoding="utf-8")]
-            t = wandb.Table(columns=["step", "reward", "adv", "has_image", "length", "extracted", "gold", "completion", "prompt"])
+            t = wandb.Table(columns=["step", "reward", "adv", "has_image", "forced", "length", "extracted", "gold", "completion", "prompt"])
             for r in rows:
                 gold = r.get("ref", {}).get("answer") if isinstance(r.get("ref"), dict) else None
-                t.add_data(s, r["reward"], r.get("adv"), r["has_image"], r["length"], r.get("extracted"), gold,
+                t.add_data(s, r["reward"], r.get("adv"), r["has_image"], r.get("forced", False), r["length"], r.get("extracted"), gold,
                            collapse(r["completion"]), r["prompt"][-800:])
             self.up.run.log({"train_step": s, "samples/completions": t})
             self.tabled.add(s)

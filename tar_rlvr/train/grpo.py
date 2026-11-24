@@ -78,7 +78,7 @@ def format_prompt(tok, text: str) -> str:
 def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None, return_eval: bool = False):
     """return_eval=True 면 (batches, eval_rows). eval.n_prompts 개를 고정 시드로 떼어 학습에서 뺀다 (held-out)."""
     d = cfg["data"]
-    rows = make_synthetic(d["n_samples"]) if d["source"] == "synthetic" else None
+    rows = make_synthetic(d["n_samples"], instruction_kind=d.get("instruction", "sketch")) if d["source"] == "synthetic" else None
     if rows is None:
         from tar_rlvr.data.cova import load_cova
         rows = load_cova(d)
@@ -193,6 +193,12 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
         reward_fns=reward_fns,
         metric_fns=metric_fns,
     )
+    fi = g.get("forced_image") or {}
+    if fi.get("enabled"):
+        if cont.get("enabled", True):
+            raise ValueError("forced_image 는 continuation 과 같이 쓰지 않는다 (그림 뒤 EOS 에 텍스트를 붙이지 않는 실험)")
+        from tar_rlvr.train import forced_image
+        forced_image.install(learner, g["num_generations"], fi.get("per_group", 2), fi.get("prefix", forced_image.DEFAULT_PREFIX))
     if tel:
         tel.attach(cluster, learner, eval_rows)
     # Tunix 는 actor 를 내부 복사본으로 학습하므로 반드시 actor_trainer.model 을 봐야 한다
