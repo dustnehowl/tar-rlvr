@@ -55,6 +55,16 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         out = orig_generate(prompts, apply_chat_template=apply_chat_template, mode=mode, micro_batch_size=micro_batch_size, **kw)
         if mode != rl_cluster_lib.Mode.TRAIN:
             return out
+        return _continue(prompts, out, base_cfg, train=True)
+
+    def generate_with_config(prompts, **overrides):
+        """eval 용: 롤아웃 설정(top_k=1 greedy 등)을 바꿔 1차 생성 + 같은 설정으로 이어쓰기. STATS 는 건드리지 않음."""
+        cfg = dataclasses.replace(base_cfg, **overrides)
+        with cluster.cluster_config.role_to_mesh[rl_cluster_lib.Role.ROLLOUT]:
+            out = cluster.rollout.generate(list(prompts), cfg)
+        return _continue(prompts, out, cfg, train=False)
+
+    def _continue(prompts, out, cfg1, train: bool):
         raw = out.tokens
         ragged = not hasattr(raw, "ndim")   # Tunix 0.1.7: 길이가 제각각인 list[array]; 0.1.5: (B, L) 배열
         if ragged:
@@ -67,16 +77,18 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
             tokens = np.asarray(raw)
         texts = list(out.text)
         n_real = [_n_real(tokens[i], pad_id, eos_id) for i in range(len(texts))]
-        STATS["first_pass"] += len(texts)
-        STATS["visual"] += sum("<im_start>" in t for t in texts)
-        STATS["visual_closed"] += sum("<im_end>" in t for t in texts)
+        if train:
+            STATS["first_pass"] += len(texts)
+            STATS["visual"] += sum("<im_start>" in t for t in texts)
+            STATS["visual_closed"] += sum("<im_end>" in t for t in texts)
         idx = [i for i, t in enumerate(texts) if needs_continuation(t, n_real[i], max_completion, min_cont)]
         if not idx:
             return out
-        STATS["continued"] += len(idx)
+        if train:
+            STATS["continued"] += len(idx)
         remaining = max_completion - max(n_real[i] for i in idx) - len(bridge_ids)
-        cfg2 = dataclasses.replace(base_cfg, max_tokens_to_generate=remaining,
-                                   max_prompt_length=base_cfg.max_prompt_length + 256)
+        cfg2 = dataclasses.replace(cfg1, max_tokens_to_generate=remaining,
+                                   max_prompt_length=cfg1.max_prompt_length + 256)
         prompts2 = [prompts[i] + texts[i] + bridge for i in idx]
         with cluster.cluster_config.role_to_mesh[rl_cluster_lib.Role.ROLLOUT]:
             out2 = cluster.rollout.generate(prompts2, cfg2)
@@ -97,7 +109,7 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
                 seq.append(eos_id)
             merged.append((i, seq))
             merged_text[i] = texts[i] + bridge + out2.text[j]
-            if "<im_start>" in out2.text[j]:
+            if train and "<im_start>" in out2.text[j]:
                 STATS["redraw"] += 1   # 이어쓰기에서 또 그림을 그린 경우 (지표)
         L = max(tokens.shape[1], max(len(s) for _, s in merged))
         new = np.full((tokens.shape[0], L), pad_id, dtype=tokens.dtype)
@@ -105,7 +117,7 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         for i, seq in merged:
             new[i, :] = pad_id
             new[i, : len(seq)] = np.asarray(seq, dtype=tokens.dtype)
-        if debug:
+        if debug and train:
             n_re = sum("<im_start>" in out2.text[j] for j in range(len(idx)))
             print(f"[continuation] {len(idx)}/{len(texts)} continued after image (budget {remaining}); redrew instead of reasoning: {n_re}")
         if ragged:   # 들어온 포맷대로: 행마다 실제 토큰(+EOS)까지만 잘라 리스트로
@@ -119,6 +131,7 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         return dataclasses.replace(out, tokens=jnp.asarray(new), text=merged_text, logits=None, logprobs=None)
 
     cluster.generate = generate
+    cluster.generate_with_config = generate_with_config
     return cluster
 
 

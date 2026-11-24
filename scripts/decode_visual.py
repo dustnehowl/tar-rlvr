@@ -15,6 +15,7 @@ def main():
     ap.add_argument("--n", type=int, default=8)
     ap.add_argument("--out", default="logs/vis")
     ap.add_argument("--cfg", type=float, default=4.0)
+    ap.add_argument("--any-reward", action="store_true", help="정답/오답 반반 대신 그림 있는 샘플을 앞에서부터")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -29,7 +30,10 @@ def main():
 
     rows = [json.loads(l) for l in open(a.jsonl)]
     rows = [r for r in rows if "<im_end>" in r["completion"]]
-    pick = [r for r in rows if r["reward"] >= 1][: a.n // 2] + [r for r in rows if r["reward"] < 1][: a.n - a.n // 2]
+    if a.any_reward:
+        pick = rows[: a.n]
+    else:
+        pick = [r for r in rows if r["reward"] >= 1][: a.n // 2] + [r for r in rows if r["reward"] < 1][: a.n - a.n // 2]
     for k, r in enumerate(pick):
         m = re.search(r"<im_start><S(\d)>((?:<I\d+>)+)<im_end>", r["completion"])
         if not m:

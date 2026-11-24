@@ -59,8 +59,10 @@ def apply_lora(model, mesh, lora_cfg):
     )
     # qwix 동적 서브클래스가 flax 0.12 에서 pytree=True 로 생성돼 nnx.state() 가 비는 문제 우회
     type(lora_model)._pytree__is_pytree = False
+    # 새로 생긴 LoRA 파라미터만 샤딩한다. 전체 state 에 걸면 backbone 배열이 새로 만들어져
+    # reference(=base) 와 backbone 공유가 깨진다 → KL 기록용 reference 가 7B 를 통째로 한 벌 더 쓰게 됨.
     with mesh:
-        state = nnx.state(lora_model)
+        state = nnx.state(lora_model, nnx.LoRAParam)
         nnx.update(lora_model, jax.lax.with_sharding_constraint(state, nnx.get_partition_spec(state)))
     return lora_model
 
@@ -73,7 +75,8 @@ def format_prompt(tok, text: str) -> str:
     return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
 
 
-def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None):
+def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None, return_eval: bool = False):
+    """return_eval=True 면 (batches, eval_rows). eval.n_prompts 개를 고정 시드로 떼어 학습에서 뺀다 (held-out)."""
     d = cfg["data"]
     rows = make_synthetic(d["n_samples"]) if d["source"] == "synthetic" else None
     if rows is None:
@@ -81,6 +84,16 @@ def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None):
         rows = load_cova(d)
     for r in rows:
         r["prompts"] = format_prompt(tok, r["prompts"])
+    ev = cfg.get("eval") or {}
+    n_eval = min(int(ev.get("n_prompts") or 0), max(0, len(rows) - batch_size))
+    eval_rows = []
+    if n_eval:
+        import random as _random
+        order = sorted(rows, key=lambda r: str(r.get("qid", r["prompts"])))
+        _random.Random(ev.get("seed", 4242)).shuffle(order)
+        eval_rows, held = order[:n_eval], {id(r) for r in order[:n_eval]}
+        rows = [r for r in rows if id(r) not in held]
+        print(f"[data] held-out eval: {len(eval_rows)} rows (학습에서 제외) → train {len(rows)} rows")
     # 값은 np.array 여야 한다: Tunix 가 jax.tree.map(np.repeat) 로 G 배 복제하는데 list[str] 이면 구조가 깨진다.
     # Tunix 는 train_ds 를 한 번만 순회하고 멈춘다 → max_steps 만큼 되도록 에폭 반복 (에폭마다 재셔플)
     import math, random, numpy as np
@@ -94,18 +107,18 @@ def build_dataset(cfg, batch_size: int, tok, max_steps: int | None = None):
             chunk = order[i:i + batch_size]
             batches.append({k: np.array([r[k] for r in chunk]) for k in chunk[0]})
     print(f"[data] {len(rows)} rows × {epochs} epochs = {len(batches)} batches of {batch_size} (max_steps={max_steps})")
-    return batches
+    return (batches, eval_rows) if return_eval else batches
 
 
-def train(cfg: dict, max_steps: int | None = None, debug: bool = False):
+def train(cfg: dict, max_steps: int | None = None, debug: bool = False, run_name: str | None = None):
     """flax eager-sharding 은 변수 생성 시 mesh 컨텍스트를 요구 → 전체를 set_mesh 안에서."""
     from tunix.utils import compat
     mesh = build_mesh(cfg["mesh"])
     with compat.set_mesh(mesh):
-        return _train(cfg, mesh, max_steps, debug)
+        return _train(cfg, mesh, max_steps, debug, run_name)
 
 
-def _train(cfg, mesh, max_steps, debug):
+def _train(cfg, mesh, max_steps, debug, run_name=None):
     from tunix.rl import rl_cluster as rl_cluster_lib
     from tunix.rl.grpo import grpo_learner as grpo_lib
     from tunix.rl.rollout import base_rollout
@@ -113,11 +126,26 @@ def _train(cfg, mesh, max_steps, debug):
 
     g = cfg["grpo"]
     steps = max_steps or g["max_steps"]
-    policy, tok = build_model_and_tokenizer(cfg, mesh)
-    reference, _ = build_model_and_tokenizer(cfg, mesh, with_lora=False) if g["beta"] > 0 else (None, None)
-    dataset = build_dataset(cfg, g["batch_size"], tok, max_steps=steps)
+    tcfg = cfg.get("telemetry", {})
+    want_ref = g["beta"] > 0 or tcfg.get("log_kl", False)
+    if want_ref and cfg["model"].get("lora", {}).get("enabled"):
+        # LoRA 면 reference = LoRA 를 씌우기 전 base. 같은 backbone 을 공유해 가중치 복사가 생기지 않는다.
+        reference, tok = build_model_and_tokenizer(cfg, mesh, with_lora=False)
+        policy = apply_lora(reference, mesh, cfg["model"]["lora"])
+    else:
+        policy, tok = build_model_and_tokenizer(cfg, mesh)
+        reference = build_model_and_tokenizer(cfg, mesh, with_lora=False)[0] if want_ref else None
+    dataset, eval_rows = build_dataset(cfg, g["batch_size"], tok, max_steps=steps, return_eval=True)
     reward_fns = build_reward_fns(cfg["rewards"])
     metric_fns = [visual_metrics]          # 시각 사용률 등 핵심 지표는 항상 기록
+    tel = None
+    if tcfg.get("enabled", True):
+        import time as _time
+        from tar_rlvr.train.telemetry import Telemetry
+        run_name = run_name or _time.strftime("run_%Y%m%d_%H%M%S")
+        tel = Telemetry(cfg, tok, run_dir=f"logs/runs/{run_name}")
+        metric_fns.append(tel.metric_fn)
+        print(f"[telemetry] logs/runs/{run_name}/ 에 기록 — 업로드: scripts/wandb_sync.py logs/runs/{run_name}")
     if debug:
         from tar_rlvr.train import debug_log
         debug_log.banner("[0. 토크나이저]")
@@ -142,6 +170,7 @@ def _train(cfg, mesh, max_steps, debug):
             compute_logps_micro_batch_size=g.get("logps_micro_batch_size"),
             rollout_micro_batch_size=g.get("rollout_micro_batch_size"),
             checkpoint_root_directory=cfg.get("checkpoint_dir"),
+            metrics_logging_options=tel.metrics_logging_options() if tel else None,
         ),
         rollout_config=base_rollout.RolloutConfig(
             max_tokens_to_generate=g["max_completion_length"],
@@ -158,10 +187,14 @@ def _train(cfg, mesh, max_steps, debug):
                              bridge=cont.get("bridge", "\nBased on the sketch, "), debug=debug)
     learner = grpo_lib.GRPOLearner(
         rl_cluster=cluster,
-        algo_config=grpo_lib.GRPOConfig(num_generations=g["num_generations"], beta=g["beta"], epsilon=g["epsilon"]),
+        # beta=0 이면 KL 은 기록만 한다 → 음수가 안 나오는 k3 추정치(low_var_kl). beta>0 이면 기존 기본값 유지.
+        algo_config=grpo_lib.GRPOConfig(num_generations=g["num_generations"], beta=g["beta"], epsilon=g["epsilon"],
+                                        kl_loss_mode=g.get("kl_loss_mode", "low_var_kl" if g["beta"] == 0 else "kl")),
         reward_fns=reward_fns,
         metric_fns=metric_fns,
     )
+    if tel:
+        tel.attach(cluster, learner, eval_rows)
     # Tunix 는 actor 를 내부 복사본으로 학습하므로 반드시 actor_trainer.model 을 봐야 한다
     before = _lora_snapshot(cluster.actor_trainer.model) if debug else None
     learner.train(dataset)
