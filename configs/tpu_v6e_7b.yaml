@@ -44,7 +44,7 @@ rewards:
   max_visual_tokens_per_image: 128
 telemetry:              # logs/runs/<run>/ 에 기록 → scripts/wandb_sync.py 로 업로드
   enabled: true
-  log_kl: true          # beta=0 이어도 ref(=LoRA 뺀 base, backbone 공유) logps 로 KL 기록. step 당 ref forward 1회 추가
+  log_kl: false        # true 면 7B 학습 step 이 OOM (reference 가 HBM 을 더 씀). beta=0 이라 loss 엔 영향 없음
   token_metrics: false   # 학습 forward 의 logits 로 entropy(텍스트/시각)·P(<im_start>)
   sample_every: 50
   n_samples: 10

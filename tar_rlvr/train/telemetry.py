@@ -277,7 +277,7 @@ class Telemetry:
                 ref = cluster.get_ref_per_token_logps(
                     prompt_tokens=ex.prompt_ids, completion_tokens=ex.completion_ids,
                     pad_id=cluster.rollout.pad_id(), eos_id=cluster.rollout.eos_id(),
-                    micro_batch_size=(self.cfg["grpo"].get("logps_micro_batch_size") or 1) * G)
+                    micro_batch_size=int(self.cfg.get("telemetry", {}).get("kl_micro_batch_size", 1)))   # 기록용이라 작게: G 개 한 번에 하면 학습 step 이 OOM
                 ex = ex.replace(ref_per_token_logps=ref)
             return ex
 
