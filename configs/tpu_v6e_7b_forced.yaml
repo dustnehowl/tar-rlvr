@@ -58,3 +58,5 @@ eval:                   # held-out: 아래 개수만큼 학습 데이터에서 �
   k_prompts: null
   batch: 16
   seed: 4242
+checkpoint_dir: /mnt/work/ckpt   # <dir>/<run 이름>. 같은 이름으로 재실행하면 이어서 학습
+checkpoint_every_secs: 900

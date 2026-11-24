@@ -138,11 +138,11 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
     dataset, eval_rows = build_dataset(cfg, g["batch_size"], tok, max_steps=steps, return_eval=True)
     reward_fns = build_reward_fns(cfg["rewards"])
     metric_fns = [visual_metrics]          # 시각 사용률 등 핵심 지표는 항상 기록
+    import time as _time
+    run_name = run_name or _time.strftime("run_%Y%m%d_%H%M%S")
     tel = None
     if tcfg.get("enabled", True):
-        import time as _time
         from tar_rlvr.train.telemetry import Telemetry
-        run_name = run_name or _time.strftime("run_%Y%m%d_%H%M%S")
         tel = Telemetry(cfg, tok, run_dir=f"logs/runs/{run_name}")
         metric_fns.append(tel.metric_fn)
         print(f"[telemetry] logs/runs/{run_name}/ 에 기록 — 업로드: scripts/wandb_sync.py logs/runs/{run_name}")
@@ -169,7 +169,10 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
             train_micro_batch_size=g.get("train_micro_batch_size"),
             compute_logps_micro_batch_size=g.get("logps_micro_batch_size"),
             rollout_micro_batch_size=g.get("rollout_micro_batch_size"),
-            checkpoint_root_directory=cfg.get("checkpoint_dir"),
+            # checkpoint_dir/<run_name>. 같은 run 이름으로 다시 실행하면 Tunix 가 마지막 체크포인트에서 이어간다
+            # (데이터도 그만큼 건너뜀). VM 이 꺼져도 run 을 살리기 위한 것.
+            checkpoint_root_directory=f"{cfg['checkpoint_dir'].rstrip('/')}/{run_name}" if cfg.get("checkpoint_dir") else None,
+            checkpointing_options=_ckpt_options(cfg.get("checkpoint_every_secs", 900)) if cfg.get("checkpoint_dir") else None,
             metrics_logging_options=tel.metrics_logging_options() if tel else None,
         ),
         rollout_config=base_rollout.RolloutConfig(
@@ -209,6 +212,13 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
         delta = float(jnp.sqrt(sum(jnp.sum(jnp.square(a - b)) for a, b in zip(after, before))))
         print(f"\n[check] LoRA update L2 = {delta:.3e}  (lr={g['learning_rate']}; 0 이면 gradient 가 안 흐르는 것)")
     return learner
+
+
+def _ckpt_options(every_secs: int):
+    import orbax.checkpoint as ocp
+    return ocp.CheckpointManagerOptions(
+        save_decision_policy=ocp.checkpoint_managers.ContinuousCheckpointingPolicy(minimum_interval_secs=every_secs),
+        max_to_keep=2)
 
 
 def _lora_snapshot(model):

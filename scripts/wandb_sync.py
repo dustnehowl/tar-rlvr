@@ -235,6 +235,25 @@ class LogSource:
         return False
 
 
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def auto_tags(cfg: dict) -> list[str]:
+    """run 을 W&B 에서 걸러 보기 위한 태그: 지시문 / 그림 처리 방식."""
+    if not cfg:
+        return []
+    g = cfg.get("grpo", {})
+    fi, cont = g.get("forced_image") or {}, g.get("continuation") or {}
+    image = (f"forced{fi.get('per_group')}of{g.get('num_generations')}" if fi.get("enabled")
+             else "bridge" if cont.get("enabled", True) else "free")
+    return [f"prompt:{cfg.get('data', {}).get('instruction', 'sketch')}", f"image:{image}", f"beta:{g.get('beta')}"]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source", help="logs/runs/<run> 디렉토리 또는 옛 --debug 로그 파일")
@@ -245,6 +264,8 @@ def main():
     ap.add_argument("--interval", type=int, default=60)
     ap.add_argument("--no-decode", action="store_true", help="그림 디코딩 끄기")
     ap.add_argument("--sample-every", type=int, default=50, help="(옛 로그) completion 표 주기")
+    ap.add_argument("--until-pid", type=int, default=None, help="--follow 중 이 PID(학습)가 끝나면 마지막까지 올리고 종료")
+    ap.add_argument("--tags", default="", help="쉼표 구분 W&B 태그 (기본: config 에서 자동)")
     a = ap.parse_args()
 
     is_dir = os.path.isdir(a.source)
@@ -255,7 +276,8 @@ def main():
     g = cfg.get("grpo", {})
     per_step = g.get("batch_size", 2) * g.get("num_generations", 8)
     run = wandb.init(entity=a.entity, project=a.project, name=name, id=name, resume="allow",
-                     config={"source": a.source, **cfg}, settings=wandb.Settings(silent=True))
+                     config={"source": a.source, **cfg}, tags=[t for t in a.tags.split(",") if t] or auto_tags(cfg),
+                     settings=wandb.Settings(silent=True))
     done = run.summary.get("train_step")
     if done is None and run.resumed:            # 서버 summary 반영이 늦을 수 있어 history 로 확인
         try:
@@ -268,9 +290,10 @@ def main():
     up = Uploader(run, per_step)
     src = RunDirSource(a.source, up, done, decode=not a.no_decode) if is_dir else LogSource(a.source, up, done, 2, a.sample_every)
     while True:
-        src.poll(final=not a.follow)
+        stop = a.until_pid is not None and not _alive(a.until_pid)
+        src.poll(final=not a.follow or stop)
         up.flush_summary()
-        if not a.follow:
+        if not a.follow or stop:
             break
         time.sleep(a.interval)
     print(f"[wandb_sync] 완료: step {src.done}", flush=True)
