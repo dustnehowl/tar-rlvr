@@ -1,7 +1,7 @@
 # 일반 RLVR + 그룹 중 일부 롤아웃만 그림 강제 시작. tpu_v6e_7b.yaml 과 차이: instruction, continuation, forced_image
 model:
   kind: tar7b
-  hf_id: ByteDance-Seed/Tar-7B
+  hf_id: csuhan/Tar-7B-v0.1   # ByteDance-Seed/Tar-7B 와 파일 해시 전부 동일 (2026-11-25 확인)
   local_path: /mnt/work/tar7b_lm
   tokenizer_path: /mnt/work/tar7b_lm
   num_visual_tokens: 65536

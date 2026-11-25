@@ -1,7 +1,7 @@
 # GPU 1장 (96GB) 파일럿: Tar-7B + LoRA + CoVA math (math_vr, mathnet)
 model:
   kind: tar7b
-  hf_id: ByteDance-Seed/Tar-7B
+  hf_id: csuhan/Tar-7B-v0.1   # ByteDance-Seed/Tar-7B 와 파일 해시 전부 동일 (2026-11-25 확인)
   num_visual_tokens: 65536
   remat: false          # qwix LoRA 와 nnx.remat 충돌 → 끔
   lora:
