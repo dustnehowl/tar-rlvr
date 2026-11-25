@@ -1,0 +1,137 @@
+[
+ {
+  "i": 0,
+  "qid": "e25a4a4aaf0f",
+  "task": "math_vr",
+  "gold": "A",
+  "correct_step0": false,
+  "correct_step150": true,
+  "question": "In the Cartesian coordinate plane, the region represented by the system of inequalities  \n$$\nx + y \\geq 0 \nx - y \\geq 0 \nx \\leq 1 \n$$\nhas an area of (     )  \nOptions:  \nA. 1  \nB. 2  \nC. 3  \nD. 4"
+ },
+ {
+  "i": 1,
+  "qid": "55c40a80bb26",
+  "task": "math_vr",
+  "gold": "72\\degree",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "In the regular pentagon ABCDE, diagonals AC and BD intersect at point P. What is the measure of $\\angle APB$? __________"
+ },
+ {
+  "i": 2,
+  "qid": "cfd43d9b482f",
+  "task": "math_vr",
+  "gold": "\\frac{5}{6}",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "If the real numbers $x$ and $y$ satisfy:\n\n1. $x - y - 2 \\leq 0$\n2. $x + 2y - 4 \\leq 0$\n3. $2x - 3 \\geq 0$\n\nthen the maximum value of $\\frac{y}{x}$ is ______."
+ },
+ {
+  "i": 3,
+  "qid": "f105d85fe887",
+  "task": "math_vr",
+  "gold": "3",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "The number of common points between the line $y = x + 3$ and the curve $\\frac{y^2}{9} - \\frac{x|x|}{4} = 1$ is ______."
+ },
+ {
+  "i": 4,
+  "qid": "5f164269830e",
+  "task": "math_vr",
+  "gold": "1",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "In $\\triangle ABC$, if $\\angle A = 30^\\circ$, $\\angle B = 45^\\circ$, and $AC = \\sqrt{2}$, then $BC=\\underline{\\qquad}$."
+ },
+ {
+  "i": 5,
+  "qid": "05e687555982",
+  "task": "math_vr",
+  "gold": "2",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "**In parallelogram $ABCD$, $DB\\perp AD$, and $AC=10$, $BD=6$. Find the lengths of all sides of the quadrilateral: ________.**"
+ },
+ {
+  "i": 6,
+  "qid": "3cc3488d3a59",
+  "task": "mathnet",
+  "gold": "3",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "What is the smallest number of regular hexagons of side length $1$ needed to completely cover a disc of radius $1$?"
+ },
+ {
+  "i": 7,
+  "qid": "7aa1c96dc93a",
+  "task": "math_vr",
+  "gold": "1996",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "In trapezoid $ABCD$, the lower base $BC = 1998$, the upper base $AD = 1996$, point $M$ lies on the lower base $BC$, and $S_{\\triangle AEM} : S_{\\text{trapezoid}~AMCD} = 1 : 1996$. Find the length of $CM$: __________."
+ },
+ {
+  "i": 8,
+  "qid": "7993f2cc709c",
+  "task": "math_vr",
+  "gold": "5",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "The angle between the two diagonals of a rectangle is $60^\\circ$, and the length of each diagonal is $10\\mathrm{cm}$. Then the length of the shorter side of this rectangle is __________ cm."
+ },
+ {
+  "i": 9,
+  "qid": "5ac852d09956",
+  "task": "math_vr",
+  "gold": "B",
+  "correct_step0": false,
+  "correct_step150": false,
+  "question": "#\n\nThe graph of the function $y=2 \\sin(2x+\\frac{\\pi}{3})$ is (　　)\n\n**Options:**\n\n- A. Symmetric with respect to the origin\n- B. Symmetric with respect to the point $(-\\frac{\\pi}{6},0)$\n- C. Symmetric with respect to the $y$-axis\n- D. Symmetric with respect to the line $x=\\frac{\\pi}{6}$"
+ },
+ {
+  "i": 10,
+  "qid": "49210dd9434d",
+  "task": "math_vr",
+  "gold": "12\\,\\text{cm}^2",
+  "correct_step0": true,
+  "correct_step150": true,
+  "question": "Given that the lengths of the two diagonals of a rhombus are 4 cm and 6 cm, the area of the rhombus is __________ ."
+ },
+ {
+  "i": 11,
+  "qid": "6c5b0441ad02",
+  "task": "math_vr",
+  "gold": "C",
+  "correct_step0": false,
+  "correct_step150": true,
+  "question": "### From a point $P$ on the line $y = x$, draw two tangents $l_1, l_2$ to the circle $C$: $$(x-5)^2 + (y-1)^2 = 2$$, with tangent points $A$ and $B$ respectively. The minimum area of quadrilateral $PABC$ is (____)\n\n**Options:**\n- A. $2$\n- B. $3$\n- C. $2\\sqrt{3}$\n- D. $4$"
+ },
+ {
+  "i": 12,
+  "qid": "53b715a3e7a6",
+  "task": "math_vr",
+  "gold": "4\\sqrt{2}",
+  "correct_step0": true,
+  "correct_step150": true,
+  "question": "If the area of a square is $16\\mathrm{cm}^2$, then the length of its diagonal is __________ cm."
+ },
+ {
+  "i": 13,
+  "qid": "8c85b1dceea4",
+  "task": "math_vr",
+  "gold": "(1, 1)",
+  "correct_step0": true,
+  "correct_step150": false,
+  "question": "Given a square $AOBC$ with sides $OA$ and $OB$ lying along the coordinate axes, and vertex $C$ located in the first quadrant on the graph of the inverse proportional function $y=\\frac{1}{x}$, the coordinates of point $C$ are ______."
+ },
+ {
+  "i": 14,
+  "qid": "2e06740c5a66",
+  "task": "math_vr",
+  "gold": "D",
+  "correct_step0": true,
+  "correct_step150": false,
+  "question": "**The number of roots of the equation $\\log_{1/3} |x| = x^2$ is (　　)**  \n\nOptions:\nA. Only one real root\nB. Two positive roots\nC. Two negative roots\nD. One positive root and one negative root"
+ }
+]
