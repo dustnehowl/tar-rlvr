@@ -6,6 +6,7 @@ set -u
 cd "$(dirname "$0")/.."
 source /mnt/work/venv311/bin/activate
 export HF_HOME=${HF_HOME:-/mnt/work/hf}
+[ -f .env ] && { set -a; . ./.env; set +a; }   # WANDB_API_KEY (git 에 안 올라감)
 ENTITY=${WANDB_ENTITY:-dustnehowl}
 
 for item in "$@"; do
