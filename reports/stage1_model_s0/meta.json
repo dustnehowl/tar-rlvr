@@ -1,0 +1,162 @@
+[
+ {
+  "i": 0,
+  "qid": "8059cb0619b3",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 1,
+  "qid": "891c39200b09",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 2,
+  "qid": "0a4db88d7bc9",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 3,
+  "qid": "53b715a3e7a6",
+  "info": [
+   "model_drawn: S2/81 correct=1",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 4,
+  "qid": "aa95a9f0cfb9",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 5,
+  "qid": "a73c1f01cece",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 6,
+  "qid": "870a56a67dc0",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 7,
+  "qid": "5f164269830e",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 8,
+  "qid": "a5d016d8c6c5",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 9,
+  "qid": "799a58dbaf3b",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 10,
+  "qid": "cb13faaa2eab",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 11,
+  "qid": "47399e1f688e",
+  "info": [
+   "model_drawn: S2/81 correct=1",
+   "model_drawn_S0: S0/729 correct=1"
+  ]
+ },
+ {
+  "i": 12,
+  "qid": "aa059c694ce8",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 13,
+  "qid": "28c4872a6e8c",
+  "info": [
+   "model_drawn: S2/81 correct=1",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 14,
+  "qid": "5ac852d09956",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 15,
+  "qid": "1b010209fac9",
+  "info": [
+   "model_drawn: S2/81 correct=1",
+   "model_drawn_S0: S0/729 correct=1"
+  ]
+ },
+ {
+  "i": 16,
+  "qid": "db4d24e5eed6",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 17,
+  "qid": "502c54eb605f",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 18,
+  "qid": "b71d995bc947",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ },
+ {
+  "i": 19,
+  "qid": "f9f5284c577b",
+  "info": [
+   "model_drawn: S2/81 correct=0",
+   "model_drawn_S0: S0/729 correct=0"
+  ]
+ }
+]

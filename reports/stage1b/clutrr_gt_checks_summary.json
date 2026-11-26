@@ -1,0 +1,15 @@
+{
+ "names=match": 2032,
+ "red_labels=3": 26,
+ "own_image=True": 2032,
+ "state_only=False": 781,
+ "own_image&state_only=False": 125,
+ "red_labels=1": 2545,
+ "state_only=True": 1907,
+ "own_image&state_only=True": 1907,
+ "names=uncertain": 220,
+ "own_image=False": 656,
+ "red_labels=2": 116,
+ "names=mismatch": 436,
+ "red_labels=0": 1
+}

@@ -37,3 +37,10 @@ Oracle does not beat either baseline; point estimates are negative.
   An S0 (729-token) oracle would exceed the 768-token budget and was not run.
 - Leaky check is text-only (gold value in the trace before / right after the first `<img>`); images were not inspected for written answers.
 - text_only uses the neutral prompt (as specified), the others the sketch prompt — the prompt difference is part of the text_only gap.
+
+## Addendum (2026-11-26): budget 1536 + S0 (greedy only, `b1536_report_greedy.md`)
+
+Re-run with budget 1536 so a 729-token S0 image fits (`logs/stage1/b1536`, greedy; the sampled pass was killed by a VM shutdown and not re-run).
+Main (non-leaky, n=265): text_only 31.3, model_drawn 21.9, model_drawn_S0 20.0, oracle_S2 24.2, oracle_S0 22.6, corrupt 22.6.
+oracle_S0 − corrupt +0.0 (p=1), oracle_S0 − text_only −8.7 (p=0.01). A larger (S0) oracle image does not help either; the gate still fails.
+Model-drawn S0 vs S2 sheet: `../stage1_model_s0.png` (`scripts/stage1_s0_sheet.py`).

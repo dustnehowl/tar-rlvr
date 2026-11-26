@@ -1,0 +1,19 @@
+{
+ "config": "configs/tpu_v6e_7b.yaml",
+ "prompts": "logs/stage1/prompts.jsonl",
+ "out": "logs/stage1/b1536",
+ "kinds": "greedy,sampled",
+ "limit": null,
+ "G": 8,
+ "batch": 10,
+ "budget": 1536,
+ "image_steps": 760,
+ "max_images": 3,
+ "temperature": 0.8,
+ "prompt_len": 2048,
+ "conds": "text_only,model_drawn,model_drawn_S0,oracle_S2,oracle_S0,corrupt",
+ "bridge": "\nNow, reasoning step by step with the help of the sketch:\n\nStep 1:",
+ "model": "csuhan/Tar-7B-v0.1",
+ "lora": false,
+ "n_prompts": 300
+}

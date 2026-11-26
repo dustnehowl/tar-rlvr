@@ -10,9 +10,14 @@
 import argparse, collections, json, math, os, random
 import numpy as np
 
-CONDS = ["text_only", "model_drawn", "oracle", "corrupt"]
-PAIRS = [("oracle", "text_only"), ("oracle", "corrupt"), ("oracle", "model_drawn"),
-         ("model_drawn", "text_only"), ("corrupt", "text_only")]
+ORDER = ["text_only", "model_drawn", "model_drawn_S0", "oracle", "oracle_S2", "oracle_S0", "corrupt", "corrupt_S0"]
+ALL_PAIRS = [("oracle", "text_only"), ("oracle", "corrupt"), ("oracle", "model_drawn"),
+             ("oracle_S2", "text_only"), ("oracle_S2", "corrupt"), ("oracle_S2", "model_drawn"),
+             ("oracle_S0", "text_only"), ("oracle_S0", "corrupt"), ("oracle_S0", "oracle_S2"), ("oracle_S0", "model_drawn_S0"),
+             ("model_drawn_S0", "model_drawn"), ("model_drawn", "text_only"), ("model_drawn_S0", "text_only"),
+             ("corrupt", "text_only"),
+             ("oracle_S0", "corrupt_S0"), ("corrupt_S0", "text_only")]           # Stage 1b
+CONDS, PAIRS = list(ORDER), list(ALL_PAIRS)      # main() 에서 records 에 있는 조건으로 좁힌다
 
 
 def wilson(k, n, z=1.96):
@@ -57,6 +62,11 @@ def main():
     a = ap.parse_args()
     P = {r["qid"]: r for r in map(json.loads, open(a.prompts))}
     R = [json.loads(l) for l in open(f"{a.run}/records.jsonl")]
+    global CONDS, PAIRS
+    present = {r["cond"] for r in R}
+    CONDS = [c for c in ORDER if c in present]
+    PAIRS = [(x, y) for x, y in ALL_PAIRS if x in present and y in present]
+    IMG = [c for c in CONDS if c != "text_only"]
     md, summary = [], {}
     p = md.append
 
@@ -76,9 +86,9 @@ def main():
         for r in rk:
             by[r["cond"]][r["qid"]][r["sample"]] = r["correct"]
             recs[r["cond"]][r["qid"]][r["sample"]] = r
-        qids = sorted(set(by["text_only"]) & set(by["oracle"]) & set(by["corrupt"]) & set(by["model_drawn"]))
-        G = max(len(v) for v in by["oracle"].values())
-        emitted_s = {q: [recs["oracle"][q][j]["emitted"] for j in range(G)] for q in qids}
+        qids = sorted(set.intersection(*[set(by[c]) for c in CONDS]))
+        G = max(len(v) for v in by[IMG[0]].values())
+        emitted_s = {q: [recs[IMG[0]][q][j]["emitted"] for j in range(G)] for q in qids}
         emit_q = {q: any(v) for q, v in emitted_s.items()}
 
         subsets = collections.OrderedDict()
@@ -93,6 +103,12 @@ def main():
         subsets["main · not emitted · free-form"] = [q for q in main if not emit_q[q] and not P[q]["is_mc"]]
         subsets["leaky only"] = [q for q in qids if P[q]["leaky"]]
         subsets["all 300"] = qids
+        if any("solvable" in P[q] for q in qids):                  # Stage 1b maze
+            subsets["main · solvable"] = [q for q in main if P[q].get("solvable")]
+            subsets["main · UNSOLVABLE"] = [q for q in main if P[q].get("solvable") is False]
+            subsets["main · emitted · solvable"] = [q for q in main if emit_q[q] and P[q].get("solvable")]
+        for k in [k for k, v in subsets.items() if not v]:          # 빈 부분집합 (비수학 태스크의 MC 등) 제외
+            del subsets[k]
 
         p(f"\n## {kind} ({'1 샘플' if kind == 'greedy' else f'{G} 샘플, T=0.8'})\n")
         p(f"<im_start> 를 낸 프롬프트: {sum(emit_q.values())}/{len(qids)}"
@@ -126,7 +142,10 @@ def main():
             p("| subset | n | A − B | Δpass@1 (pp) [95% CI] | Δpass@8 (pp) [95% CI] |")
             p("|---|---|---|---|---|")
         for name in ("main (non-leaky)", "main · free-form", "main · MC", "main · emitted", "main · emitted · free-form",
-                     "main · emitted · MC", "main · not emitted", "main · not emitted · free-form"):
+                     "main · emitted · MC", "main · not emitted", "main · not emitted · free-form",
+                     "main · solvable", "main · UNSOLVABLE"):
+            if name not in subsets:
+                continue
             qs = subsets[name]
             if not qs:
                 continue
@@ -149,32 +168,35 @@ def main():
         if kind == "sampled":
             # 샘플 단위: <im_start> 를 낸 샘플만 (그림 세 조건은 prefix 공유 → 정확한 짝). text_only 는 짝이 없어 제외.
             p("\n### <im_start> 를 낸 샘플만 (샘플 단위, 그림 세 조건; prefix 공유)\n")
-            p("| subset | n 샘플 | model_drawn | oracle | corrupt | oracle − model_drawn [CI] | oracle − corrupt [CI] |")
-            p("|---|---|---|---|---|---|---|")
-            for name in ("main (non-leaky)", "main · free-form", "main · MC"):
+            OR = "oracle_S2" if "oracle_S2" in IMG else "oracle"
+            spairs = [(x, y) for x, y in PAIRS if x in IMG and y in IMG]
+            p("| subset | n 샘플 | " + " | ".join(IMG) + " | " + " | ".join(f"{x} − {y} [CI]" for x, y in spairs) + " |")
+            p("|---|---|" + "---|" * (len(IMG) + len(spairs)))
+            for name in [n for n in ("main (non-leaky)", "main · free-form", "main · MC", "main · solvable") if n in subsets]:
                 qs = subsets[name]
-                cells = {c: [] for c in ("model_drawn", "oracle", "corrupt")}
                 groups = []
                 for q in qs:
                     js = [j for j in range(G) if emitted_s[q][j]]
                     if js:
-                        groups.append([[by[c][q][j] for c in ("model_drawn", "oracle", "corrupt")] for j in js])
+                        groups.append([[by[c][q][j] for c in IMG] for j in js])
                 flat = np.array([s for g in groups for s in g], float)
                 if len(flat) == 0:
                     continue
                 # 프롬프트 클러스터 bootstrap (같은 프롬프트의 샘플은 독립 아님)
                 rng = np.random.default_rng(0)
-                dm, dc = [], []
+                ix = [(IMG.index(x), IMG.index(y)) for x, y in spairs]
+                ds = [[] for _ in ix]
                 for _ in range(5000):
                     pick = [groups[i] for i in rng.integers(0, len(groups), len(groups))]
-                    f = np.array([s for g in pick for s in g], float)
-                    dm.append(f[:, 1].mean() - f[:, 0].mean()); dc.append(f[:, 1].mean() - f[:, 2].mean())
+                    f = np.array([s for g in pick for s in g], float).mean(0)
+                    for k, (u, v) in enumerate(ix):
+                        ds[k].append(f[u] - f[v])
                 m = flat.mean(0)
-                p(f"| {name} | {len(flat)} ({len(groups)} 프롬프트) | {100 * m[0]:.1f} | {100 * m[1]:.1f} | {100 * m[2]:.1f} "
-                  f"| {100 * (m[1] - m[0]):+.1f} [{100 * np.percentile(dm, 2.5):+.1f}, {100 * np.percentile(dm, 97.5):+.1f}] "
-                  f"| {100 * (m[1] - m[2]):+.1f} [{100 * np.percentile(dc, 2.5):+.1f}, {100 * np.percentile(dc, 97.5):+.1f}] |")
+                p(f"| {name} | {len(flat)} ({len(groups)} 프롬프트) | " + " | ".join(f"{100 * v:.1f}" for v in m) + " | "
+                  + " | ".join(f"{100 * (m[u] - m[v]):+.1f} [{100 * np.percentile(d, 2.5):+.1f}, {100 * np.percentile(d, 97.5):+.1f}]"
+                               for (u, v), d in zip(ix, ds)) + " |")
         # ---- <im_start> 위치
-        pos = [recs["oracle"][q][j] for q in qids for j in range(G) if recs["oracle"][q][j]["emitted"]]
+        pos = [recs[IMG[0]][q][j] for q in qids for j in range(G) if recs[IMG[0]][q][j]["emitted"]]
         if pos:
             fp = np.array([r["first_pos"] for r in pos])
             md_len = np.array([recs["model_drawn"][r["qid"]][r["sample"]]["n_tokens"] for r in pos])
@@ -199,7 +221,8 @@ def main():
               f"| {np.median([r['n_tokens'] for r in rr]):.0f} |")
     out = a.out or f"{a.run}/report.md"
     open(out, "w").write("\n".join(md) + "\n")
-    json.dump(summary, open(f"{a.run}/summary.json", "w"), indent=1, default=float)
+    spath = f"{a.run}/summary.json" if a.out is None else os.path.splitext(out)[0] + "_summary.json"
+    json.dump(summary, open(spath, "w"), indent=1, default=float)
     print("\n".join(md))
 
 

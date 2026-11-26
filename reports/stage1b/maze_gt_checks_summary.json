@@ -1,0 +1,9 @@
+{
+ "valid_maze=True": 4302,
+ "own_image=True": 4200,
+ "state_only=True": 4200,
+ "own_image&state_only=True": 4200,
+ "valid_maze=False": 18,
+ "own_image=False": 120,
+ "state_only=False": 120
+}

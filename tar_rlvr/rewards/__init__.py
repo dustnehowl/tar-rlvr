@@ -25,8 +25,12 @@ def _refs(cols):
 
 def correctness_reward(prompts, completions, **cols) -> list[float]:
     out = []
+    from .cova_tasks import SCORERS
     for comp, task, ref in zip(completions, cols["task"], _refs(cols)):
         comp, task = _s(comp), _s(task)
+        if task in SCORERS:                            # maze / clutrr / prosqa: 태스크별 답 추출
+            out.append(float(SCORERS[task](comp, ref)[0]))
+            continue
         ans = extract_answer(comp)
         if ans is None:
             out.append(0.0)
