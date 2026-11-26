@@ -63,6 +63,11 @@ python scripts/train.py --config configs/tpu_v6e_7b.yaml --run-name run5
 /mnt/work/wandb-venv/bin/python scripts/wandb_sync.py logs/runs/run5 --entity <팀> --follow
 ```
 
+## 현재 상태
+
+**[2026-11-26 정리](reports/summary_2026-11-26.md)**: 기본 Tar-7B 는 정답 그림을 넣어 줘도 내용을 쓰지 못한다 (math·maze·clutrr, S2·S0).
+r06 은 bridge 없이는 그림 뒤에서 바로 끝난다. 다음 결정: reading-SFT vs backbone 교체.
+
 ## 왜 이 구조인가
 - Tar는 vocab만 확장된 Qwen2.5 → Tunix qwen2 구현에 `vocab_size`만 덮어쓰면 로드됨 (`tar_rlvr/model/tar.py`).
 - CoVA 문제는 텍스트 입력 → RL 중엔 TA-Tok 인코더(PyTorch) 불필요. 시각 토큰은 모델이 생성하는 latent workspace, reward는 `<answer>` 텍스트만 봄.
