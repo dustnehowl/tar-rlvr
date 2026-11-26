@@ -122,7 +122,7 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
     from tunix.rl import rl_cluster as rl_cluster_lib
     from tunix.rl.grpo import grpo_learner as grpo_lib
     from tunix.rl.rollout import base_rollout
-    from tar_rlvr.train.continuation import install_continuation, visual_metrics
+    from tar_rlvr.train.continuation import install_continuation, install_bridge_mask, visual_metrics
 
     g = cfg["grpo"]
     steps = max_steps or g["max_steps"]
@@ -192,10 +192,15 @@ def _train(cfg, mesh, max_steps, debug, run_name=None):
         rl_cluster=cluster,
         # beta=0 이면 KL 은 기록만 한다 → 음수가 안 나오는 k3 추정치(low_var_kl). beta>0 이면 기존 기본값 유지.
         algo_config=grpo_lib.GRPOConfig(num_generations=g["num_generations"], beta=g["beta"], epsilon=g["epsilon"],
-                                        kl_loss_mode=g.get("kl_loss_mode", "low_var_kl" if g["beta"] == 0 else "kl")),
+                                        kl_loss_mode=g.get("kl_loss_mode", "low_var_kl" if g["beta"] == 0 else "kl"),
+                                        loss_agg_mode=g.get("loss_agg_mode", "sequence-mean-token-mean")),
         reward_fns=reward_fns,
         metric_fns=metric_fns,
     )
+    if cont.get("enabled", True) and cont.get("mask_bridge", False):
+        install_bridge_mask(learner)
+    elif cont.get("mask_bridge", False):
+        raise ValueError("continuation.mask_bridge 는 continuation.enabled 와 같이 쓴다")
     fi = g.get("forced_image") or {}
     if fi.get("enabled"):
         if cont.get("enabled", True):

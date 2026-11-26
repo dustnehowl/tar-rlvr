@@ -1,6 +1,6 @@
 #!/bin/bash
 # 학습을 순서대로 돌린다. 각 run 마다 W&B 업로더(사이드카)를 붙이고, 학습이 끝나면 다음 run 으로.
-# 사용: WANDB_API_KEY=... nohup scripts/run_queue.sh <config>:<run 이름> [<config>:<run 이름> ...] > logs/queue.log 2>&1 &
+# 사용: [WANDB_TAGS=a,b,c] WANDB_API_KEY=... nohup scripts/run_queue.sh <config>:<run 이름> [<config>:<run 이름> ...] > logs/queue.log 2>&1 &
 # 같은 run 이름으로 다시 돌리면 checkpoint_dir/<이름> 에서 이어서 학습한다 (VM 재부팅 후 재개용).
 set -u
 cd "$(dirname "$0")/.."
@@ -22,7 +22,7 @@ for item in "$@"; do
     sleep 30
   done
   if [ -f "logs/runs/$name/config.json" ] && [ -n "${WANDB_API_KEY:-}" ]; then
-    /mnt/work/wandb-venv/bin/python scripts/wandb_sync.py "logs/runs/$name" --entity "$ENTITY" --follow --until-pid $pid \
+    /mnt/work/wandb-venv/bin/python scripts/wandb_sync.py "logs/runs/$name" --entity "$ENTITY" --follow --until-pid $pid --tags "${WANDB_TAGS:-}" \
       >> "logs/wandb_sync_$name.log" 2>&1 &
     echo "[queue] wandb_sync PID $!"
   fi

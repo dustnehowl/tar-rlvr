@@ -14,12 +14,16 @@ Tunix 의 RLCluster.generate 를 몽키패치한다 (logits/logprobs 는 GRPO �
 """
 from __future__ import annotations
 import dataclasses
+import threading
 import numpy as np
 import jax.numpy as jnp
 
 from tar_rlvr.rewards.parsing import extract_answer
 
 STATS = {"first_pass": 0, "continued": 0, "visual": 0, "visual_closed": 0, "redraw": 0}
+# 마지막 학습 롤아웃의 강제 bridge 위치 {completion 행: (시작 위치, 길이)} — install_bridge_mask 가 읽는다.
+# Tunix 는 롤아웃을 한 스레드에서 순서대로 돌리지만, 스레드별로 둬서 섞이지 않게 한다.
+_LAST = threading.local()
 
 
 def _n_real(tokens_row: np.ndarray, pad_id: int, eos_id: int) -> int:
@@ -78,6 +82,7 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
         texts = list(out.text)
         n_real = [_n_real(tokens[i], pad_id, eos_id) for i in range(len(texts))]
         if train:
+            _LAST.spans, _LAST.bridge_ids = {}, list(bridge_ids)
             STATS["first_pass"] += len(texts)
             STATS["visual"] += sum("<im_start>" in t for t in texts)
             STATS["visual_closed"] += sum("<im_end>" in t for t in texts)
@@ -86,6 +91,7 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
             return out
         if train:
             STATS["continued"] += len(idx)
+            _LAST.spans = {i: (n_real[i], len(bridge_ids)) for i in idx}   # bridge 는 1차 토큰(EOS 제거) 바로 뒤
         remaining = max_completion - max(n_real[i] for i in idx) - len(bridge_ids)
         cfg2 = dataclasses.replace(cfg1, max_tokens_to_generate=remaining,
                                    max_prompt_length=cfg1.max_prompt_length + 256)
@@ -135,6 +141,46 @@ def install_continuation(cluster, tok, max_completion: int, min_cont: int = 96,
     return cluster
 
 
+def install_bridge_mask(learner):
+    """강제 bridge 토큰을 completion_mask 에서 뺀다 → policy gradient 없음 (이어쓰기 자체는 그대로).
+
+    Tunix 는 completion_mask = (토큰 != pad) 로 만든다. _generate_and_compute_advantage 를 감싸
+    방금 롤아웃의 bridge 위치 (_LAST.spans) 를 0 으로 바꾼다. 위치의 토큰이 bridge 와 다르면 멈춘다.
+    지표: visual/bridge_masked_tokens (step 합), visual/bridge_continued (이어쓴 completion 수, step 합).
+    """
+    from tunix.rl import rl_cluster as rl_cluster_lib
+    orig = learner._generate_and_compute_advantage
+
+    def gen_adv(training_input, mode=rl_cluster_lib.Mode.TRAIN):
+        _LAST.spans = None
+        ex = orig(training_input, mode)
+        if mode != rl_cluster_lib.Mode.TRAIN:
+            return ex
+        spans = _LAST.spans
+        if spans is None:
+            raise RuntimeError("bridge_mask: 학습 롤아웃에서 continuation 기록이 없다 — install_continuation 이 켜져 있는지 확인")
+        mask = np.array(ex.completion_mask)
+        ids = np.asarray(ex.completion_ids)
+        want = np.asarray(_LAST.bridge_ids)
+        n = 0
+        for i, (s, k) in spans.items():
+            if not np.array_equal(ids[i, s:s + k], want):
+                raise RuntimeError(f"bridge_mask: 행 {i} 위치 {s}..{s + k} 토큰이 bridge 와 다름: {ids[i, s:s + k].tolist()}")
+            n += int(mask[i, s:s + k].sum())
+            mask[i, s:s + k] = False
+        learner.rl_cluster.buffer_metrics({"visual/bridge_masked_tokens": (float(n), np.sum),
+                                           "visual/bridge_continued": (float(len(spans)), np.sum)}, mode=mode)
+        return ex.replace(completion_mask=jnp.asarray(mask))
+
+    learner._generate_and_compute_advantage = gen_adv
+    print("[bridge_mask] 강제 bridge 토큰을 completion_mask 에서 제외 (policy gradient 없음)")
+
+
+def _nanmean(x):
+    x = np.asarray(x, dtype=float)
+    return float(np.nanmean(x)) if x.size and not np.all(np.isnan(x)) else float("nan")
+
+
 def visual_metrics(prompts, completions, rewards, advantages=None, advances=None, **cols):
     """항상 켜두는 metric_fn: 시각 사용률 / 시각+답 도달률 / 시각 샘플 정답률 / 재그림률 — 연구의 핵심 지표."""
     comps = [c.decode("utf-8", "replace") if isinstance(c, (bytes, bytearray)) else str(c) for c in completions]
@@ -153,6 +199,7 @@ def visual_metrics(prompts, completions, rewards, advantages=None, advances=None
         "visual/use_rate": (float(vis.mean()), np.mean),
         "visual/with_answer_rate": (float((vis & ans).sum() / max(1, vis.sum())), np.mean),
         "visual/reward_visual": (float(rewards[vis].mean()) if vis.any() else 0.0, np.mean),
-        "visual/reward_text": (float(rewards[~vis].mean()) if (~vis).any() else 0.0, np.mean),
+        # 텍스트 샘플이 없으면 NaN (예전엔 0 으로 기록돼 평균을 끌어내렸다). 기록용, 학습엔 영향 없음.
+        "visual/reward_text": (float(rewards[~vis].mean()) if (~vis).any() else float("nan"), _nanmean),
         "visual/redraw_rate": (float(redraw.sum() / max(1, vis.sum())), np.mean),
     }
