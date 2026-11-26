@@ -73,3 +73,12 @@ class TATok:
         self.m.encoder.pool_scale = scale + 1
         img = self.m.decode_from_encoder_indices(self.torch.tensor(codes).unsqueeze(0).to(self.device), {"cfg_scale": cfg})
         return Image.fromarray(np.asarray(img[0]))
+
+    def encode(self, image, scale: int = 2):
+        """PIL 이미지 → (scale, [code…]). Tar 의 i2t 와 같은 전처리 (to_tensor, 0..1; 정규화·리사이즈는 인코더 안에서).
+        scale s ↔ pool_scale s+1 (S2 = 27/3 → 9×9 = 81 토큰)."""
+        from torchvision.transforms.functional import to_tensor
+        x = to_tensor(image.convert("RGB")).unsqueeze(0).to(self.device, dtype=self.m.encoder.dtype)
+        codes = self.m.encoder.encode(x, pool_scale=scale + 1)["bottleneck_rep"][0].cpu().tolist()
+        assert len(codes) == SEQ[scale], (len(codes), scale)
+        return scale, [int(c) for c in codes]
