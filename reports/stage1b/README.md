@@ -1,4 +1,4 @@
-# Stage 1b — 비수학 태스크 oracle (maze 완료, clutrr greedy 완료 / sampled 진행 중)
+# Stage 1b — 비수학 태스크 oracle: maze·clutrr 모두 oracle 효과 없음
 
 Base Tar-7B (LoRA 없음). Stage 1 (math) 과 같은 `scripts/oracle_eval.py` (예산 1536, batch 10).
 준비: `scripts/stage1b_prep.py` → `logs/stage1b/<task>/prompts.jsonl`. 채점: `tar_rlvr/rewards/cova_tasks.py` (+ `tests/test_cova_tasks.py`).
@@ -57,7 +57,7 @@ non-leaky 193 문제:
 - pass@8 기준 (0.7 초과 / 0 근처) 으로는 통과지만 **pass@1 은 찍기 수준**: clutrr 은 주관식이지만 답이 관계어 18 개뿐이다.
 - maze 와 달리 그림을 스스로 시작한다 (샘플 53%, 169/193 문제) → on-demand oracle 가능. 스스로 그린 그림은 효과 없음 (그림 샘플 0.107 vs 아닌 샘플 0.106).
 
-## clutrr — oracle_S0 (greedy 완료, sampled 진행 중) — `clutrr_oracle_greedy_report.md`
+## clutrr — oracle_S0: 효과 없음 — `clutrr_oracle_report.md`
 
 조건 text_only / model_drawn / oracle_S0 / corrupt_S0, 예산 1536, on-demand (모델이 `<im_start>` 를 낸 자리에 GT 첫 그림 S0 = 729 토큰).
 main = state-only 193 (이름 검사 match + 첫 관계 하나). corrupt 그림도 state-only 193 안에서만 짝 (`prompts.before_corrupt_remap.jsonl` 은 원본).
@@ -71,7 +71,19 @@ greedy 에서 그림을 시작한 문제 128/193.
 - oracle_S0 − corrupt_S0 −3.1pp (3 / 9, McNemar p=0.15), oracle_S0 − text_only −3.6pp (p=0.31). 정답 그림이 틀린 그림보다 낫지 않다 (점추정은 반대 방향).
 - S0 주입 뒤 잘림 36% (oracle) / 34% (corrupt) 로 같다. 답을 낸 경우만 봐도 oracle 0.11 vs corrupt 0.18.
 - 전 조건이 찍기 기준선 (최빈값 0.125) 근처.
-- sampled ×8 (스캔의 prefix 재사용, 샘플 단위 정확한 짝) 은 진행 중.
+
+sampled ×8 (스캔의 prefix 재사용 → 그림 세 조건은 샘플 단위로 정확히 짝), 프롬프트 단위 paired bootstrap:
+
+| main (193) | pass@1 | pass@8 |
+|---|---|---|
+| text_only | 11.3 | 45.1 |
+| model_drawn | 10.6 | 43.5 |
+| oracle_S0 | 8.3 | 34.7 |
+| corrupt_S0 | 8.4 | 36.3 |
+
+- **oracle_S0 − corrupt_S0: pass@1 −0.1pp [−1.2, +1.0], pass@8 −1.6pp [−5.7, +2.6].** 샘플 단위 (그림 낸 815 샘플) −0.2pp [−2.2, +1.8]. 정답 그림과 다른 문제 그림이 구별되지 않는다.
+- oracle_S0 − text_only: pass@1 −3.0pp [−5.1, −0.8], pass@8 −10.4pp [−18.1, −2.6]. S0 그림을 넣는 것 자체가 손해 (corrupt 도 같은 크기로 손해).
+- 그림 위치: 847 샘플 중 824 가 토큰 0 — "on demand" 는 사실상 "추론 전 그림".
 
 ## prosqa — 기본 passrate 스캔 (완료, `prosqa_scan_report.md`)
 
