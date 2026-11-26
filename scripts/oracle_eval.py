@@ -59,7 +59,7 @@ def patch_keep_stop_token():
 
 
 class Gen:
-    def __init__(self, cfg, batch: int, prompt_len: int, kv: int):
+    def __init__(self, cfg, batch: int, prompt_len: int, kv: int, model_tok=None):
         import jax
         from tunix.generate import sampler as sampler_mod
         from tunix.generate.tokenizer_adapter import TokenizerAdapter
@@ -69,20 +69,26 @@ class Gen:
         self.mesh = build_mesh(cfg["mesh"])
         self._ctx = compat.set_mesh(self.mesh)
         self._ctx.__enter__()
-        model, tok = build_model_and_tokenizer(cfg, self.mesh, with_lora=False)
-        self.tok = tok
-        mc = model.config
-        self.sampler = sampler_mod.Sampler(model, TokenizerAdapter(tok), sampler_mod.CacheConfig(
-            cache_size=kv, num_layers=mc.num_layers, num_kv_heads=mc.num_kv_heads, head_dim=mc.head_dim))
+        model, tok = model_tok or build_model_and_tokenizer(cfg, self.mesh, with_lora=False)
+        self.tok, self.model, self.kv = tok, model, kv
+        self.rebuild_sampler()
         self.B, self.P = batch, prompt_len
         self.id = {s: tok.convert_tokens_to_ids(s) for s in (IM_START, IM_END)}
         self.eos = tok.eos_token_id
         self.calls = 0
 
+    def rebuild_sampler(self):
+        """모델 파라미터를 바꾼 뒤 (LoRA 복원 등) 샘플러를 새로 만든다."""
+        from tunix.generate import sampler as sampler_mod
+        from tunix.generate.tokenizer_adapter import TokenizerAdapter
+        mc = self.model.config
+        self.sampler = sampler_mod.Sampler(self.model, TokenizerAdapter(self.tok), sampler_mod.CacheConfig(
+            cache_size=self.kv, num_layers=mc.num_layers, num_kv_heads=mc.num_kv_heads, head_dim=mc.head_dim))
+
     def n_tokens(self, text: str) -> int:
         return len(self.tok.encode(text, add_special_tokens=False))
 
-    def run(self, prompts, steps, stops, forbid=(), greedy=True, temperature=0.8, seed=0):
+    def run(self, prompts, steps, stops, forbid=(), greedy=True, temperature=0.8, seed=0, return_ids=False):
         """→ [(text_without_stop, n_tokens_incl_stop, stop)] ; stop ∈ {'eos','<im_start>','<im_end>','length'}."""
         stop_ids = [self.eos if s == "eos" else self.id[s] for s in stops]
         name = {v: k for k, v in zip(stops, stop_ids)}
@@ -102,7 +108,7 @@ class Gen:
                 ids = [int(t) for t in np.asarray(out.tokens[i])]
                 stop = name.get(ids[-1]) if ids else None
                 body = ids[:-1] if stop else ids
-                res.append((self.tok.decode(body), len(ids), stop or "length"))
+                res.append((self.tok.decode(body), len(ids), stop or "length") + ((ids,) if return_ids else ()))
         return res
 
 

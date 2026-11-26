@@ -43,8 +43,21 @@ greedy, 200 프롬프트 (전체 표: `maze_forced_report_greedy.md`):
 채점 주의: maze on-demand greedy (`logs/stage1b/maze`) 는 `\boxed{}` 우선 규칙 수정 전 채점이라 text_only 가 15.0 (수정 후 13.5) 으로 기록돼 있다.
 그림이 0 회라 다른 조건은 전부 같은 텍스트다. maze_forced 는 수정 후 채점.
 
-## clutrr / prosqa — 기본 passrate 스캔 (진행 중)
+## clutrr — 기본 passrate 스캔 (완료, `clutrr_scan_report.md`)
 
-이 두 태스크는 기존 passrate 스캔이 없었다 (`data/passrate*.json` 은 math 만).
-스캔 = `oracle_eval.py --kinds sampled --conds text_only,model_drawn` (×8, T=0.8; model_drawn = sketch 지시문 + 그림 뒤 bridge 이어쓰기 = scan_passrate.py 와 같은 규칙).
-pass@8 이 0.7 초과거나 0 근처면 clutrr oracle_S0 대신 다른 태스크를 고른다. 아니면 clutrr 은 S0 만 (`oracle_S0`, 대조군 `corrupt_S0`) — S2 는 이름 라벨이 깨진다 (Stage 1 round-trip).
+`oracle_eval.py --kinds sampled --conds text_only,model_drawn` (×8, T=0.8; model_drawn = sketch 지시문 + 그림 뒤 bridge = scan_passrate.py 규칙).
+non-leaky 193 문제:
+
+| | pass@1 [95% CI] | pass@8 [95% CI] |
+|---|---|---|
+| text_only | 0.113 [0.091, 0.138] | 0.451 [0.383, 0.523] |
+| model_drawn | 0.106 [0.083, 0.131] | 0.435 [0.363, 0.508] |
+| 찍기 기준선 | 무작위 0.056 / 항상 최빈값 (nephew) 0.125 | 무작위 8번 ≈ 0.37 |
+
+- pass@8 기준 (0.7 초과 / 0 근처) 으로는 통과지만 **pass@1 은 찍기 수준**: clutrr 은 주관식이지만 답이 관계어 18 개뿐이다.
+- maze 와 달리 그림을 스스로 시작한다 (샘플 53%, 169/193 문제) → on-demand oracle 가능. 스스로 그린 그림은 효과 없음 (그림 샘플 0.107 vs 아닌 샘플 0.106).
+- clutrr oracle_S0 (+ corrupt_S0) 는 사용자 결정 대기.
+
+## prosqa — 스캔 진행 중
+
+사실상 2지선다 ("Is Tom a worpus or quimpus?") → pass@8 은 찍기만으로 1 에 가깝다. pass@1 이 0.5 를 넘는지로 본다.
