@@ -1,0 +1,181 @@
+{
+ "sampled": {
+  "main (non-leaky)": {
+   "text_only": {
+    "pass1": 0.25875,
+    "passk": 0.79,
+    "n": 100
+   },
+   "model_drawn": {
+    "pass1": 0.255,
+    "passk": 0.76,
+    "n": 100
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": -0.00375,
+     "ci_pass1": [
+      -0.045,
+      0.03875
+     ],
+     "d_passk": -0.03,
+     "ci_passk": [
+      -0.11,
+      0.06
+     ]
+    }
+   }
+  },
+  "main \u00b7 free-form": {
+   "text_only": {
+    "pass1": 0.25875,
+    "passk": 0.79,
+    "n": 100
+   },
+   "model_drawn": {
+    "pass1": 0.255,
+    "passk": 0.76,
+    "n": 100
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": -0.00375,
+     "ci_pass1": [
+      -0.045,
+      0.03875
+     ],
+     "d_passk": -0.03,
+     "ci_passk": [
+      -0.11,
+      0.06
+     ]
+    }
+   }
+  },
+  "main \u00b7 emitted": {
+   "text_only": {
+    "pass1": 0.290625,
+    "passk": 0.825,
+    "n": 40
+   },
+   "model_drawn": {
+    "pass1": 0.253125,
+    "passk": 0.8,
+    "n": 40
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": -0.0375,
+     "ci_pass1": [
+      -0.09375,
+      0.01875
+     ],
+     "d_passk": -0.025,
+     "ci_passk": [
+      -0.15,
+      0.1
+     ]
+    }
+   }
+  },
+  "main \u00b7 emitted \u00b7 free-form": {
+   "text_only": {
+    "pass1": 0.290625,
+    "passk": 0.825,
+    "n": 40
+   },
+   "model_drawn": {
+    "pass1": 0.253125,
+    "passk": 0.8,
+    "n": 40
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": -0.0375,
+     "ci_pass1": [
+      -0.09375,
+      0.01875
+     ],
+     "d_passk": -0.025,
+     "ci_passk": [
+      -0.15,
+      0.1
+     ]
+    }
+   }
+  },
+  "main \u00b7 not emitted": {
+   "text_only": {
+    "pass1": 0.2375,
+    "passk": 0.7666666666666667,
+    "n": 60
+   },
+   "model_drawn": {
+    "pass1": 0.25625,
+    "passk": 0.7333333333333333,
+    "n": 60
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": 0.01875,
+     "ci_pass1": [
+      -0.035416666666666666,
+      0.07505208333333258
+     ],
+     "d_passk": -0.03333333333333333,
+     "ci_passk": [
+      -0.15,
+      0.08333333333333333
+     ]
+    }
+   }
+  },
+  "main \u00b7 not emitted \u00b7 free-form": {
+   "text_only": {
+    "pass1": 0.2375,
+    "passk": 0.7666666666666667,
+    "n": 60
+   },
+   "model_drawn": {
+    "pass1": 0.25625,
+    "passk": 0.7333333333333333,
+    "n": 60
+   },
+   "pairs": {
+    "model_drawn-text_only": {
+     "d_pass1": 0.01875,
+     "ci_pass1": [
+      -0.035416666666666666,
+      0.07505208333333258
+     ],
+     "d_passk": -0.03333333333333333,
+     "ci_passk": [
+      -0.15,
+      0.08333333333333333
+     ]
+    }
+   }
+  },
+  "all 300": {
+   "text_only": {
+    "pass1": 0.25875,
+    "passk": 0.79,
+    "n": 100
+   },
+   "model_drawn": {
+    "pass1": 0.255,
+    "passk": 0.76,
+    "n": 100
+   }
+  },
+  "im_start_pos": {
+   "n": 72,
+   "median": 0.0,
+   "q25": 0.0,
+   "q75": 0.0,
+   "frac_0": 0.9861111111111112,
+   "frac_le5": 0.9861111111111112,
+   "rel_median": 0.0
+  }
+ }
+}
